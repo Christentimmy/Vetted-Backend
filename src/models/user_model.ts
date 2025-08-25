@@ -44,7 +44,27 @@ const userSchema = new mongoose.Schema<IUser>({
     type: Boolean,
     default: false,
   },
+  relationshipStatus: {
+    type: String,
+    enum: [
+      "single",
+      "in a relationship",
+      "engaged",
+      "married",
+      "Separated",
+      "Divorced",
+      "Widowed",
+    ],
+    default: "single",
+  },
+  location: {
+    type: { type: String, enum: ["Point"], default: "Point" },
+    address: { type: String, default: "" },
+    coordinates: { type: [Number], default: [0, 0] }, //lng,lat
+  },
 });
+
+userSchema.index({ location: "2dsphere" });
 
 const UserModel = mongoose.model<IUser>("User", userSchema);
 

@@ -12,4 +12,17 @@ export interface IUser extends Document {
   accountStatus: "active" | "inactive" | "banned" | "suspended";
   isProfileCompleted: boolean;
   isPhoneVerified: boolean;
+  relationshipStatus:
+    | "single"
+    | "in a relationship"
+    | "engaged"
+    | "married"
+    | "Separated"
+    | "Divorced"
+    | "Widowed";
+  location?: {
+    type: "Point";
+    address: string;
+    coordinates: [number, number]; // [lng, lat]
+  };
 }

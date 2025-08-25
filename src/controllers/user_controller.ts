@@ -57,4 +57,35 @@ export const userController = {
       return res.status(500).json({ message: "Internal server error" });
     }
   },
+
+  updateLocation: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
+      const { location } = req.body;
+      if (!location) {
+        res.status(400).json({ message: "Location is required" });
+        return;
+      }
+      const { address, coordinates } = location;
+      if (!address || !coordinates) {
+        res.status(400).json({ message: "Invalid location format" });
+        return;
+      }
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+      await UserModel.findByIdAndUpdate(userId, { location: { address, coordinates } }, { new: true });
+      return res.status(200).json({
+        message: "Location updated successfully",
+      });
+    } catch (error) {
+      console.error("Update location error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
 };

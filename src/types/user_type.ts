@@ -17,9 +17,9 @@ export interface IUser extends Document {
     | "in a relationship"
     | "engaged"
     | "married"
-    | "Separated"
-    | "Divorced"
-    | "Widowed";
+    | "deparated"
+    | "divorced"
+    | "widowed";
   location?: {
     type: "Point";
     address: string;

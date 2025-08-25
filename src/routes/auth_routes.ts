@@ -10,4 +10,7 @@ router.post("/register-with-phoneNumber", authController.registerWithNumber);
 router.post("/google-sign-up", authController.googleAuthSignUp);
 router.post("/google-login", authController.googleAuthSignIn);
 
+router.post("/send-number-otp", authController.sendNumberOtp);
+router.post("/verify-number-otp", authController.verifyNumberOtp);
+
 export default router;

@@ -1,68 +1,73 @@
 import mongoose from "mongoose";
 import { IUser } from "../types/user_type";
 
-const userSchema = new mongoose.Schema<IUser>({
-  displayName: { type: String },
-  email: {
-    type: String,
-    sparse: true,
-    index: {
-      unique: true,
-      partialFilterExpression: { email: { $type: "string" } },
+const userSchema = new mongoose.Schema<IUser>(
+  {
+    displayName: { type: String },
+    email: {
+      type: String,
+      sparse: true,
+      index: {
+        unique: true,
+        partialFilterExpression: { email: { $type: "string" } },
+      },
     },
-  },
-  phone: {
-    type: String,
-    sparse: true,
-    index: {
-      unique: true,
-      partialFilterExpression: { phone: { $type: "string" } },
+    phone: {
+      type: String,
+      sparse: true,
+      index: {
+        unique: true,
+        partialFilterExpression: { phone: { $type: "string" } },
+      },
     },
-  },
-  role: { type: String, enum: ["user", "admin"], default: "user" },
-  avatar: { type: String },
-  oneSignalId: { type: String },
-  bio: {
-    type: String,
-    maxlength: 500,
-    default: "",
-  },
-  dateOfBirth: {
-    type: Date,
-  },
-  accountStatus: {
-    type: String,
-    enum: ["active", "inactive", "banned", "suspended"],
-    default: "active",
-  },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    avatar: { type: String },
+    oneSignalId: { type: String },
+    bio: {
+      type: String,
+      maxlength: 500,
+      default: "",
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    accountStatus: {
+      type: String,
+      enum: ["active", "inactive", "banned", "suspended"],
+      default: "active",
+    },
 
-  isPhoneVerified: {
-    type: Boolean,
-    default: false,
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isProfileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    relationshipStatus: {
+      type: String,
+      enum: [
+        "single",
+        "in a relationship",
+        "engaged",
+        "married",
+        "separated",
+        "divorced",
+        "widowed",
+      ],
+      default: "single",
+    },
+    location: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      address: { type: String, default: "" },
+      coordinates: { type: [Number], default: [0, 0] }, //lng,lat
+    },
   },
-  isProfileCompleted: {
-    type: Boolean,
-    default: false,
-  },
-  relationshipStatus: {
-    type: String,
-    enum: [
-      "single",
-      "in a relationship",
-      "engaged",
-      "married",
-      "Separated",
-      "Divorced",
-      "Widowed",
-    ],
-    default: "single",
-  },
-  location: {
-    type: { type: String, enum: ["Point"], default: "Point" },
-    address: { type: String, default: "" },
-    coordinates: { type: [Number], default: [0, 0] }, //lng,lat
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 userSchema.index({ location: "2dsphere" });
 

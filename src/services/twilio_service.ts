@@ -42,5 +42,6 @@ export const checkNumberValidity = async (phoneNumber: string) => {
         return lookup["valid"];
     } catch (error) {
         console.error('Error fetching lookup:', error);
+        return;
     }
 }

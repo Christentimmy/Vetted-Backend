@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import UserModel from "../models/user_model";
 
 export const userController = {
-  updateAnonymousName: async (req: Request, res: Response) => {
+  updateName: async (req: Request, res: Response) => {
     try {
       if (!req.body) {
         res.status(400).json({ message: "Missing request body" });
@@ -24,10 +24,10 @@ export const userController = {
         { new: true }
       );
       return res.status(200).json({
-        message: "Anonymous name updated successfully",
+        message: "Name updated successfully",
       });
     } catch (error) {
-      console.error("Update anonymous name error:", error);
+      console.error("Update name error:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },
@@ -60,61 +60,84 @@ export const userController = {
 
   updateLocation: async (req: Request, res: Response) => {
     try {
-      if (!req.body) {
-        res.status(400).json({ message: "Missing request body" });
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(400).json({ message: "Invalid Request" });
         return;
       }
-      const { location } = req.body;
-      if (!location) {
-        res.status(400).json({ message: "Location is required" });
+      const { lat, lng, address } = req.body;
+      if (!lat || !lng || !address) {
+        res.status(400).json({ message: "Invalid Request" });
         return;
       }
-      const { address, coordinates } = location;
-      if (!address || !coordinates) {
-        res.status(400).json({ message: "Invalid location format" });
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
         return;
       }
+      user.location = {
+        type: "Point",
+        address,
+        coordinates: [lng, lat],
+      };
+      await user.save();
+      res.status(200).json({ message: "Location updated successfully" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  uploadProfilePicture: async (req: Request, res: Response) => {
+    try {
       const userId = res.locals.userId;
       if (!userId) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
-      await UserModel.findByIdAndUpdate(userId, { location: { address, coordinates } }, { new: true });
-      return res.status(200).json({
-        message: "Location updated successfully",
-      });
+      const file = req.file;
+      if (!file) {
+        res.status(400).json({ message: "File is required" });
+        return;
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      user.avatar = file.path;
+      await user.save();
+      res.status(200).json({ message: "Profile picture updated successfully" });
     } catch (error) {
-      console.error("Update location error:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Update profile picture error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   },
 
-  uploadProfilePicture:async(req:Request,res:Response)=>{
+  updateRelationStatus: async (req: Request, res: Response) => {
     try {
-        const userId = res.locals.userId;
-        if (!userId) {
-            res.status(401).json({ message: "Unauthorized" });
-            return;
-        }
-        const file = req.file;
-        if (!file) {
-            res.status(400).json({ message: "File is required" });
-            return;
-        }
-        const user = await UserModel.findById(userId);
-        if (!user) {
-            res.status(404).json({ message: "User not found" });
-            return;
-        }
-        user.avatar = file.path;
-        await user.save();
-        res.status(200).json({ message: "Profile picture updated successfully" });
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+      const { relationStatus } = req.body;
+      if (!relationStatus) {
+        res.status(400).json({ message: "Relation status is required" });
+        return;
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      
+      user.relationshipStatus = relationStatus;
+      await user.save();
+      res.status(200).json({ message: "Relation status updated successfully" });
     } catch (error) {
-        console.error("Update profile picture error:", error);
-        res.status(500).json({ message: "Internal server error" });
+      console.error("Update relation status error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-  }
-
-
-
+  },
 };

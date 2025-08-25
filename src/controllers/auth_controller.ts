@@ -7,17 +7,21 @@ import { verifyGoogleToken } from "../services/google_token";
 export const authController = {
   loginWithNumber: async (req: Request, res: Response) => {
     try {
+      if (!req.body || typeof req.body !== "object") {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
       const { phone } = req.body;
       if (!phone) {
         res.status(400).json({ message: "Phone number is required" });
         return;
       }
 
-      const response = await checkNumberValidity(phone);
-      if (response === false) {
-        res.status(400).json({ message: "Number is not valid" });
-        return;
-      }
+      //   const response = await checkNumberValidity(phone);
+      //   if (response === false) {
+      //     res.status(400).json({ message: "Number is not valid" });
+      //     return;
+      //   }
 
       const user = await UserModel.findOne({ phone });
       if (!user) {
@@ -25,7 +29,7 @@ export const authController = {
         return;
       }
 
-      const jwtToken = await generateToken(user);
+      const jwtToken = generateToken(user);
 
       res.status(200).json({
         message: "Login Successful",
@@ -40,17 +44,21 @@ export const authController = {
 
   registerWithNumber: async (req: Request, res: Response) => {
     try {
+      if (!req.body || typeof req.body !== "object") {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
       const { phone } = req.body;
       if (!phone) {
         res.status(400).json({ message: "Phone number is required" });
         return;
       }
 
-      const response = await checkNumberValidity(phone);
-      if (response === false) {
-        res.status(400).json({ message: "Number is not valid" });
-        return;
-      }
+      //   const response = await checkNumberValidity(phone);
+      //   if (response === false) {
+      //     res.status(400).json({ message: "Number is not valid" });
+      //     return;
+      //   }
 
       const existingUser = await UserModel.findOne({ phone });
       if (existingUser) {
@@ -103,15 +111,19 @@ export const authController = {
       });
       await user.save();
 
-      const jwtToken = await generateToken(user);
+      const jwtToken = generateToken(user);
 
       res.status(201).json({
         message: "SignUp successful",
         token: jwtToken,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google signup error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      if (error.message.includes("Invalid Google token")) {
+        res.status(400).json({ message: "Invalid Google token" });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
     }
   },
 
@@ -154,10 +166,13 @@ export const authController = {
         token: jwtToken,
         email: user.email,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login error:", error);
-      res.status(500).json({ message: "Internal server error" });
+      if (error.message.includes("Invalid Google token")) {
+        res.status(400).json({ message: "Invalid Google token" });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
     }
   },
-
 };

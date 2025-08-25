@@ -2,7 +2,9 @@ import express, { Express } from "express";
 import config from "./config/config";
 import morgan from "morgan";
 import { connectToDatabase } from "./config/database";
+
 import authRoutes from "./routes/auth_routes";
+import userRoutes from "./routes/user_routes";
 
 const app: Express = express();
 const port = config.port;
@@ -13,6 +15,7 @@ app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api", (req, res) => {
   res.send("Hello World!");
 });

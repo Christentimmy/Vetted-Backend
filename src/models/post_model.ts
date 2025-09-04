@@ -164,6 +164,14 @@ const EngagementStatsSchema = new Schema<IEngagementStats>(
         ref: "User",
       },
     ],
+    totalFlagVote: {
+      type: Number,
+      default: 0,
+    },
+    leadingFlag: {
+      type: String,
+      default: "",
+    },
   },
   { _id: false }
 );
@@ -193,19 +201,15 @@ const PostSchema = new Schema<IPost>(
     media: [MediaItemSchema],
     poll: PollSchema,
 
+    personName: String,
+    personLocation: String,
+
     // Engagement and Interactions
     engagement: {
       type: EngagementStatsSchema,
       default: () => ({}),
     },
 
-    hashtags: [
-      {
-        type: String,
-        maxlength: 50,
-        index: true, // For hashtag searches
-      },
-    ],
 
     // Moderation and Safety
     isReported: {

@@ -2,7 +2,7 @@ import { IUser } from "../types/user_type";
 import { IPoll } from "../types/post_type";
 import { IMediaItem } from "../types/post_type";
 import { Reaction } from "../models/reaction_model";
-import SavedPost from "../models/saved_post_model";
+// import SavedPost from "../models/saved_post_model";
 
 export class PostBuilderService {
 
@@ -23,6 +23,8 @@ export class PostBuilderService {
       text,
       formatting,
       postType = "regular",
+      personName,
+      personLocation,
     } = requestBody;
 
     return {
@@ -51,6 +53,9 @@ export class PostBuilderService {
             })),
           }
         : undefined,
+
+      personName,
+      personLocation,
 
       // State
       isDraft: false,
@@ -83,12 +88,16 @@ export class PostBuilderService {
         displayName: post.authorId.displayName || null,
         avatar: post.authorId.avatar || null,
       },
+      personName: post.personName,
+      personLocation: post.personLocation,
       stats: {
         reactionCount: totalReaction,
         comments: post.engagement.commentCount,
         // reposts: post.engagement.reposts,
         // shares: post.engagement.shares,
         views: post.engagement.views,
+        totalFlagVote: post.engagement.totalFlagVote,
+        leadingFlag: post.engagement.leadingFlag,
         // saves: savedCounts,
       },
       createdAt: post.createdAt,

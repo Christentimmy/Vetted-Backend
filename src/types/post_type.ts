@@ -58,6 +58,8 @@ export interface IEngagementStats {
   saverIds: Types.ObjectId[];
   reposts: number;
   reposterIds: Types.ObjectId[];
+  totalFlagVote: number;
+  leadingFlag: string;
 }
 
 
@@ -67,36 +69,22 @@ export interface IPost extends Document {
   // Basic Post Information
   _id: Types.ObjectId;
   authorId: Types.ObjectId;
-  postType: "regular" | "ghost" | "confession" | "repost";
+  postType: "regular" | "woman";
 
   // Content
   content: ITextContent;
   media: IMediaItem[];
   poll?: IPoll;
 
-  // For confession posts - allows custom display name per post
-  confessionDisplayName?: string;
-  confessionAvatarUrl?: string;
-
-  // For reposts
-  originalPostId?: Types.ObjectId;
-  // repostComment?: string; // User's comment when reposting
-  repostChain?: Types.ObjectId[];
-  repostDepth?: number;
+  personName: string;
+  personLocation: string;
 
   // Engagement and Interactions
   engagement: IEngagementStats;
 
-  hashtags: string[];
-  mentionedUsers: Types.ObjectId[];
-
   // Moderation and Safety
   isReported: boolean;
   reportCount: number;
-  moderationStatus: "pending" | "approved" | "flagged" | "removed";
-  moderationNotes?: string;
-  isExplicitContent: boolean;
-  ageRestrictedContent: boolean;
 
   // Post State
   isDeleted: boolean;

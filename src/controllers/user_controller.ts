@@ -140,4 +140,25 @@ export const userController = {
       res.status(500).json({ message: "Internal server error" });
     }
   },
+
+  profileVerified: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      user.isProfileCompleted = true;
+      await user.save();
+      res.status(200).json({ message: "Profile verified successfully" });
+    } catch (error) {
+      console.error("Profile verification error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
 };

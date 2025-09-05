@@ -12,6 +12,8 @@ router.use(statusChecker);
 
 router.post("/create", uploadPostMedia.array("mediaFiles", 10), postController.createPost);
 router.get("/feed", postController.getFeed);
+
+router.post("/view-posts", postController.viewPosts);
 router.post("/vote-on-woman", postController.voteOnWoman);
 router.post("/comment-on-post", postController.commentOnPost);
 

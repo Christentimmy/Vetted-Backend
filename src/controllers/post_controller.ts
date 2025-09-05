@@ -11,6 +11,7 @@ import User from "../models/user_model";
 import { Reaction } from "../models/reaction_model";
 import { IPollOption } from "../types/post_type";
 import VotePoll from "../models/votepoll_model";
+import { PostViewer } from "../models/post_viewer_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -73,6 +74,70 @@ export const postController = {
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  viewPosts: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        return res.status(400).json({ message: "No postIds provided" });
+      }
+
+      const { postIds } = req.body;
+
+      if (!Array.isArray(postIds) || postIds.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "postIds must be a non-empty array" });
+      }
+
+      for (const postId of postIds) {
+        if (!isValidObjectId(postId)) {
+          return res.status(400).json({ message: "Invalid postId" });
+        }
+      }
+
+      const userId = res.locals.userId;
+
+      // Only query for the specific postIds in the request
+      // This is much more efficient than getting all viewed posts
+      const alreadyViewedDocs = await PostViewer.find({
+        userId,
+        postId: { $in: postIds },
+      }).lean();
+
+      // Extract postIds that have already been viewed
+      const alreadyViewedStrings = alreadyViewedDocs.map((doc) =>
+        doc.postId.toString()
+      );
+
+      // Filter out already viewed postIds
+      const newViewPostIds = postIds.filter(
+        (id) => !alreadyViewedStrings.includes(id.toString())
+      );
+
+      if (newViewPostIds.length > 0) {
+        // Create PostViewer entries for the new views
+        const postViewerDocs = newViewPostIds.map((postId) => ({
+          postId,
+          userId,
+        }));
+
+        await PostViewer.insertMany(postViewerDocs);
+
+        await Post.updateMany(
+          { _id: { $in: newViewPostIds } },
+          { $inc: { "engagement.views": 1 } }
+        );
+      }
+
+      return res.status(200).json({
+        message: "Posts viewed successfully",
+        viewedCount: newViewPostIds.length,
+      });
+    } catch (error) {
+      console.error("Error viewing posts:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 
@@ -642,5 +707,4 @@ export const postController = {
       return res.status(500).json({ message: "Internal server error" });
     }
   },
-  
 };

@@ -9,6 +9,8 @@ import Notification from "../models/notification_model";
 import { Block } from "../models/block_model";
 import { IUser } from "../types/user_type";
 
+
+
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const userController = {

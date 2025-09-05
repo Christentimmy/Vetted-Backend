@@ -14,8 +14,8 @@ export interface IMessageDocument extends Document {
   isDeleted?: boolean;
   isEdited?: boolean;
   avater?: string;
-//   replyToMessage?: IMessageDocument | null;
-  replyToMessageId?: IMessageDocument | mongoose.Types.ObjectId | null;
+  replyToMessage?: IMessageDocument | null;
+  replyToMessageId?: mongoose.Types.ObjectId | null;
   multipleImages: {
     mimetype: string;
     mediaUrl: string;

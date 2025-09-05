@@ -13,6 +13,11 @@ router.use(tokenValidationMiddleware);
 router.use(statusChecker);
 
 router.post("/send", messageController.sendMessage);
+router.get("/get-message-history/:otherUserId", messageController.getMessageHistory);
+
+router.get("/get-chat-list", messageController.getChatList);
+router.patch("/mark-message-as-read/:messageId", messageController.markMessageAsRead);
+router.get("/get-unread-message-count/:chatWith", messageController.getUnreadMessageCount);
 
 //media
 router.post("/upload", uploadMessageMedia.single("file"), messageController.convertFileToMedia);

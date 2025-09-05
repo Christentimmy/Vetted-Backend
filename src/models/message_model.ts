@@ -18,7 +18,7 @@ const messageSchema = new Schema<IMessageDocument>(
       type: String,
       required: false,
     },
-    // replyToMessage: { type: IMessageDocument, required: false },
+    replyToMessage: { type: Object, required: false },
     replyToMessageId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",

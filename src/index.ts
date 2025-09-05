@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth_routes";
 import userRoutes from "./routes/user_routes";
 import postRoutes from "./routes/post_routes";
 import messageRoutes from "./routes/message_route";
+import { setupSocket } from "./config/socket";
 
 const app: Express = express();
 const port = config.port;
@@ -24,6 +25,8 @@ app.use("/api/message", messageRoutes);
 // Connect to database
 connectToDatabase();
 
-app.listen(port, async () => {
+const server = app.listen(port, async () => {
   console.log(`⚡️Server is running on port: ${port}`);
 });
+
+setupSocket(server);

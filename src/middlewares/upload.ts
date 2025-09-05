@@ -37,4 +37,21 @@ const uploadPostMedia = multer({
   storage: postMediaStorage,
 });
 
-export { uploadProfile, uploadPostMedia };
+// Storage for message images/videos/audio
+const messageMediaStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "message_media",
+      resource_type: "auto",
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
+    };
+  },
+});
+
+const uploadMessageMedia = multer({
+  storage: messageMediaStorage,
+  limits: { fileSize: 150 * 1024 * 1024 },
+});
+
+export { uploadProfile, uploadPostMedia, uploadMessageMedia };

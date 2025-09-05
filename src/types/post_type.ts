@@ -102,7 +102,6 @@ export interface IPost extends Document {
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date; // For scheduled posts
-  lastEngagementAt: Date; // For feed algorithm
 
   reactToPost: (user: IUser, reactionType: string, emoji: string) => Promise<IPost>;
   deleteReaction: (userId: Types.ObjectId) => Promise<IPost>;

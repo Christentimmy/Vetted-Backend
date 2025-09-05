@@ -13,6 +13,20 @@ router.use(statusChecker);
 router.post("/create", uploadPostMedia.array("mediaFiles", 10), postController.createPost);
 router.get("/feed", postController.getFeed);
 router.post("/vote-on-woman", postController.voteOnWoman);
+router.post("/comment-on-post", postController.commentOnPost);
+
+router.patch("/react-to-post", postController.reactToPost);
+router.patch("/delete-post-reaction", postController.deletePostReaction);
+
+router.patch("/react-to-comment", postController.reactToComment);
+router.get("/get-all-comments", postController.getAllComments);
+
+router.post("/reply-to-comment", postController.replyToComment);
+router.get("/get-all-comment-replies", postController.getAllCommentReplies);
+
+router.delete("/delete-comment", postController.deleteComment);
+
+router.post("/vote-on-poll", postController.voteOnPoll);
 
 export default router;
 

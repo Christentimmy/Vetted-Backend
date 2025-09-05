@@ -18,7 +18,6 @@ const uploadProfile = multer({
   storage: profileStorage,
 });
 
-
 const postMediaStorage = new CloudinaryStorage({
   cloudinary,
   params: async (req: Request, file: Express.Multer.File) => {
@@ -54,4 +53,20 @@ const uploadMessageMedia = multer({
   limits: { fileSize: 150 * 1024 * 1024 },
 });
 
-export { uploadProfile, uploadPostMedia, uploadMessageMedia };
+const searchStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "message_media",
+      resource_type: "auto",
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
+    };
+  },
+});
+
+const searchMedia = multer({
+  storage: searchStorage,
+  limits: { fileSize: 150 * 1024 * 1024 },
+});
+
+export { uploadProfile, uploadPostMedia, uploadMessageMedia, searchMedia };

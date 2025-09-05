@@ -4,6 +4,7 @@ import { Follow } from "../models/follow";
 import User from "../models/user_model";
 import { NotificationType, sendPushNotification } from "../config/onesignal";
 import mongoose from "mongoose";
+import Notification from "../models/notification_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -277,6 +278,66 @@ export const userController = {
     } catch (error) {
       console.error("❌ Error in getUserById:", error);
       return res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+
+  getNotification: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+
+      const notifications = await Notification.find({ userId }).sort({
+        createdAt: -1,
+      });
+
+      res.status(200).json({
+        message: "Notifications fetched successfully",
+        data: notifications,
+      });
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  markNotificationAsRead: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+      if (!userId) {
+        res.status(400).json({ message: "Missing user ID" });
+        return;
+      }
+      if (!isValidObjectId(userId)) {
+        res.status(400).json({ message: "Invalid user ID" });
+        return;
+      }
+      if (!req.body) {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
+      const { notificationId } = req.body;
+
+      if (!notificationId) {
+        res.status(400).json({ message: "Notification ID is required" });
+        return;
+      }
+
+      const notification = await Notification.findOne({
+        _id: notificationId,
+        userId,
+      });
+
+      if (!notification) {
+        res.status(404).json({ message: "Notification not found" });
+        return;
+      }
+
+      notification.isRead = true;
+      await notification.save();
+
+      res.status(200).json({ message: "Notification updated successfully" });
+    } catch (error) {
+      console.error("Error updating notification:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 };

@@ -1,5 +1,4 @@
 
-
 import express from "express";
 import { userController } from "../controllers/user_controller";
 import { uploadProfile } from "../middlewares/upload";
@@ -24,6 +23,8 @@ router.get("/get-user-details", userController.getUserDetails);
 router.use(statusChecker);
 
 router.patch("/toggle-follow", userController.toggleFollow);
+router.get("/get-notifications", userController.getNotification);
+router.patch("/mark-notification-as-read", userController.markNotificationAsRead);
 
 
 export default router;

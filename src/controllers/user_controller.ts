@@ -188,8 +188,6 @@ export const userController = {
         return res.status(400).json({ message: "Cannot follow yourself" });
       }
 
-
-
       const follow = await Follow.findOne({
         follower: userId,
         following: followId,
@@ -223,6 +221,62 @@ export const userController = {
     } catch (error) {
       console.error("Error toggling follow:", error);
       return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getUserStatus: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+      const user = await User.findById(userId).select(
+        "phone accountStatus isPhoneVerified isProfileCompleted"
+      );
+
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "User status retrieved",
+        data: user,
+      });
+    } catch (error) {
+      console.error("Error retrieving user status:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+
+  getUserDetails: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(400).json({ message: "Missing user ID" });
+        return;
+      }
+
+      const user = await User.findById(userId).select("-password");
+
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      const followers = await Follow.find({ following: userId });
+      const following = await Follow.find({ follower: userId });
+
+      const userObj: any = user.toObject();
+
+      userObj.followerCount = followers.length;
+      userObj.followingCount = following.length;
+
+      res.status(200).json({
+        message: "User details fetched successfully",
+        data: userObj,
+      });
+      return;
+    } catch (error) {
+      console.error("❌ Error in getUserById:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
   },
 };

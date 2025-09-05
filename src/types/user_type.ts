@@ -6,7 +6,6 @@ export interface IUser extends Document {
   phone: string;
   role: string;
   avatar: string;
-  oneSignalId: string;
   bio: string;
   dateOfBirth: Date;
   accountStatus: "active" | "inactive" | "banned" | "suspended";

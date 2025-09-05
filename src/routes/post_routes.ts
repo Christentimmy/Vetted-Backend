@@ -27,6 +27,7 @@ router.get("/get-all-comment-replies", postController.getAllCommentReplies);
 router.delete("/delete-comment", postController.deleteComment);
 
 router.post("/vote-on-poll", postController.voteOnPoll);
+router.delete("/delete-post", postController.deletePost);
 
 export default router;
 

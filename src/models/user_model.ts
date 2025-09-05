@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     avatar: { type: String },
-    oneSignalId: { type: String },
     bio: {
       type: String,
       maxlength: 500,

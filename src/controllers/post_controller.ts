@@ -603,4 +603,44 @@ export const postController = {
       return res.status(500).json({ message: "Internal server error" });
     }
   },
+
+  deletePost: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        return res.status(400).json({ message: "No post data provided" });
+      }
+      const { postId } = req.body;
+      const user: IUser = res.locals.user;
+
+      if (!postId) {
+        return res.status(400).json({ message: "Post ID is required" });
+      }
+
+      const post = await Post.findById(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      if (post.authorId.toString() !== user._id.toString()) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      await Comment.deleteMany({ postId });
+      await Reaction.deleteMany({ postId });
+      await VotePoll.deleteMany({ postId });
+      await Post.updateMany(
+        { originalPostId: postId },
+        { $set: { isDeleted: true } }
+      );
+
+      post.isDeleted = true;
+      await post.save();
+
+      return res.status(200).json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+  
 };

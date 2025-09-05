@@ -4,6 +4,8 @@ import express from "express";
 import { userController } from "../controllers/user_controller";
 import { uploadProfile } from "../middlewares/upload";
 import tokenValidationMiddleware  from "../middlewares/token_validator";
+import { statusChecker } from "../middlewares/status_middleware";
+
 
 const router = express.Router();
 
@@ -15,6 +17,12 @@ router.post("/update-location", userController.updateLocation);
 router.post("/upload-profile-picture", uploadProfile.single("avatar"), userController.uploadProfilePicture);
 router.patch("/update-relation-status", userController.updateRelationStatus);
 router.patch("/selfie-verified", userController.profileVerified);
+
+router.get("/get-user-status", userController.getUserStatus);
+router.get("/get-user-details", userController.getUserDetails);
+
+router.use(statusChecker);
+
 router.patch("/toggle-follow", userController.toggleFollow);
 
 

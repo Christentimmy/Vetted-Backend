@@ -1,5 +1,11 @@
 import { Request, Response } from "express";
 import UserModel from "../models/user_model";
+import { Follow } from "../models/follow";
+import User from "../models/user_model";
+import { NotificationType, sendPushNotification } from "../config/onesignal";
+import mongoose from "mongoose";
+
+const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const userController = {
   updateName: async (req: Request, res: Response) => {
@@ -131,7 +137,7 @@ export const userController = {
         res.status(404).json({ message: "User not found" });
         return;
       }
-      
+
       user.relationshipStatus = relationStatus;
       await user.save();
       res.status(200).json({ message: "Relation status updated successfully" });
@@ -159,6 +165,64 @@ export const userController = {
     } catch (error) {
       console.error("Profile verification error:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  toggleFollow: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        return res.status(400).json({ message: "No follow data provided" });
+      }
+
+      const userId = res.locals.userId; // ← The actor (follower)
+      const { followId } = req.body; // ← The receiver (followed)
+
+      if (!followId) {
+        return res.status(400).json({ message: "Follow ID is required" });
+      }
+      if (!isValidObjectId(followId)) {
+        return res.status(400).json({ message: "Invalid follow ID" });
+      }
+
+      if (followId === userId) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+
+
+
+      const follow = await Follow.findOne({
+        follower: userId,
+        following: followId,
+      });
+
+      if (follow) {
+        await follow.deleteOne();
+        return res.status(200).json({ message: "Unfollowed" });
+      } else {
+        await Follow.create({ follower: userId, following: followId });
+
+        const receiver = await User.findById(followId);
+
+        if (!receiver) {
+          res.status(404).json({ message: "User not found" });
+          return;
+        }
+
+        if (receiver.oneSignalPlayerId) {
+          await sendPushNotification(
+            receiver._id.toString(),
+            receiver.oneSignalPlayerId,
+            NotificationType.FOLLOW,
+            `${res.locals.user.displayName} started following you.`,
+            `/profile/${userId}`
+          );
+        }
+
+        return res.status(200).json({ message: "Followed" });
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 };

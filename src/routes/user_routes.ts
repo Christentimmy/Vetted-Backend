@@ -15,6 +15,7 @@ router.post("/update-location", userController.updateLocation);
 router.post("/upload-profile-picture", uploadProfile.single("avatar"), userController.uploadProfilePicture);
 router.patch("/update-relation-status", userController.updateRelationStatus);
 router.patch("/selfie-verified", userController.profileVerified);
+router.patch("/toggle-follow", userController.toggleFollow);
 
 
 export default router;

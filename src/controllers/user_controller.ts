@@ -6,6 +6,9 @@ import { NotificationType, sendPushNotification } from "../config/onesignal";
 import mongoose from "mongoose";
 import Notification from "../models/notification_model";
 
+import { Block } from "../models/block_model";
+import { IUser } from "../types/user_type";
+
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const userController = {
@@ -337,6 +340,65 @@ export const userController = {
       res.status(200).json({ message: "Notification updated successfully" });
     } catch (error) {
       console.error("Error updating notification:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  toggleBlock: async (req: Request, res: Response) => {
+    try {
+      if (!req.body || typeof req.body !== "object") {
+        return res.status(400).json({ message: "Missing request body" });
+      }
+
+      const userId = res.locals.user._id;
+      const { blockId } = req.body;
+
+      if (!blockId) {
+        res.status(400).json({ message: "Block ID is required" });
+        return;
+      }
+
+      const existing = await Block.findOne({
+        blocker: userId,
+        blocked: blockId,
+      });
+
+      if (existing) {
+        await Block.deleteOne({ _id: existing._id });
+        return res.status(200).json({ message: "Unblocked" });
+      }
+
+      await Block.create({ blocker: userId, blocked: blockId });
+      return res.status(200).json({ message: "Blocked" });
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getBlockedUsers: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+
+      const blocks = await Block.find({ blocker: userId }).populate<{
+        blocked: IUser;
+      }>("blocked", "username displayName avatarUrl");
+      const formattedBlocks = await Promise.all(
+        blocks.map((block) => {
+          return {
+            _id: block.blocked._id,
+            avatarUrl: block?.blocked?.avatar,
+            displayName: block?.blocked?.displayName,
+          };
+        })
+      );
+
+      res.status(200).json({
+        message: "Blocked users fetched successfully",
+        data: formattedBlocks,
+      });
+    } catch (error) {
+      console.error("Error fetching blocked users:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },

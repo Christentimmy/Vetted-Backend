@@ -3,7 +3,7 @@ import { PostDataService } from "../services/post_data_service";
 import { PostBuilderService } from "../services/post_builder_service";
 import { Post } from "../models/post_model";
 import mongoose from "mongoose";
-
+import { Vote } from "../models/vote_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -38,11 +38,9 @@ export const postController = {
 
       if (postType === "woman") {
         if (!req.body.personName || !req.body.personLocation) {
-          return res
-            .status(400)
-            .json({
-              message: "Person name and location are required for woman posts",
-            });
+          return res.status(400).json({
+            message: "Person name and location are required for woman posts",
+          });
         }
       }
 
@@ -122,46 +120,39 @@ export const postController = {
   voteOnWoman: async (req: Request, res: Response) => {
     try {
       const userId = res.locals.userId;
-      if (!userId) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-      if (!req.body || typeof req.body !== "object") {
-        res.status(400).json({ message: "Missing request body" });
-        return;
-      }
       const { postId, color } = req.body;
-      if (!postId || !color || (color !== "red" && color !== "green")) {
-        res
-          .status(400)
-          .json({
-            message:
-              "postId and color are required, and color must be red or green",
-          });
-        return;
-      }
 
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      if (!postId || !["red", "green"].includes(color)) {
+        return res.status(400).json({ message: "Invalid postId or color" });
+      }
       if (!isValidObjectId(postId)) {
-        res.status(400).json({ message: "Invalid post ID" });
-        return;
+        return res.status(400).json({ message: "Invalid postId" });
       }
 
+      // Check if post exists
       const post = await Post.findById(postId);
-      if (!post) {
-        res.status(404).json({ message: "Post not found" });
-        return;
+      if (!post) return res.status(404).json({ message: "Post not found" });
+
+      // Check if user already voted
+      const existingVote = await Vote.findOne({ userId, postId });
+      if (existingVote) {
+        return res.status(409).json({ message: "You already voted" });
       }
 
+      // Save vote in Vote collection
+      await Vote.create({ userId, postId, color });
+
+      // Update aggregated stats in Post
       post.engagement.totalFlagVote++;
-      if (color === "red") {
-        post.engagement.redVotes++;
-      } else {
-        post.engagement.greenVotes++;
-      }
+      if (color === "red") post.engagement.redVotes++;
+      else post.engagement.greenVotes++;
 
       post.engagement.leadingFlag =
         post.engagement.redVotes > post.engagement.greenVotes ? "red" : "green";
+
       await post.save();
+
       res.status(200).json({ message: "Vote cast successfully" });
     } catch (error) {
       console.error("Error casting vote:", error);

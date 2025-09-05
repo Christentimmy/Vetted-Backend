@@ -172,6 +172,14 @@ const EngagementStatsSchema = new Schema<IEngagementStats>(
       type: String,
       default: "",
     },
+    greenVotes: {
+      type: Number,
+      default: 0,
+    },
+    redVotes: {
+      type: Number,
+      default: 0,
+    },
   },
   { _id: false }
 );

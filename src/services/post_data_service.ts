@@ -145,6 +145,7 @@ export class PostDataService {
           createdAt: 1,
           updatedAt: 1,
           isDeleted: 1,
+          
           engagement: 1, // 👈 keep engagement object
           authorId: "$author", // 👈 alias back to authorId
         },

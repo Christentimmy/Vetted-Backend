@@ -60,6 +60,8 @@ export interface IEngagementStats {
   reposterIds: Types.ObjectId[];
   totalFlagVote: number;
   leadingFlag: string;
+  greenVotes: number;
+  redVotes: number;
 }
 
 

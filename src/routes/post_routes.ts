@@ -12,6 +12,7 @@ router.use(statusChecker);
 
 router.post("/create", uploadPostMedia.array("mediaFiles", 10), postController.createPost);
 router.get("/feed", postController.getFeed);
+router.post("/vote-on-woman", postController.voteOnWoman);
 
 export default router;
 

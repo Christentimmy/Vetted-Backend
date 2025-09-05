@@ -25,4 +25,5 @@ export interface IUser extends Document {
     address: string;
     coordinates: [number, number]; // [lng, lat]
   };
+  oneSignalPlayerId: string;
 }

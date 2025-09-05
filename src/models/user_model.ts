@@ -63,6 +63,7 @@ const userSchema = new mongoose.Schema<IUser>(
       address: { type: String, default: "" },
       coordinates: { type: [Number], default: [0, 0] }, //lng,lat
     },
+    oneSignalPlayerId: { type: String },
   },
   {
     timestamps: true,

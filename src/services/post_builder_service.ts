@@ -2,22 +2,17 @@ import { IUser } from "../types/user_type";
 import { IPoll } from "../types/post_type";
 import { IMediaItem } from "../types/post_type";
 import { Reaction } from "../models/reaction_model";
+import { Follow } from "../models/follow";
 // import SavedPost from "../models/saved_post_model";
 
 export class PostBuilderService {
-
   static buildPostData(params: {
     user: IUser;
     processedPoll: IPoll | undefined;
     mediaItems: IMediaItem[];
     requestBody: any;
   }) {
-    const {
-      user,
-      processedPoll,
-      mediaItems,
-      requestBody,
-    } = params;
+    const { user, processedPoll, mediaItems, requestBody } = params;
 
     const {
       text,
@@ -69,9 +64,15 @@ export class PostBuilderService {
   static async formatPostResponse(post: any, userId: string) {
     let reactedEmoji: any;
     let totalReaction: any;
-    [reactedEmoji, totalReaction] = await Promise.all([
+    let isFollowing: any;
+
+    [reactedEmoji, totalReaction, isFollowing] = await Promise.all([
       Reaction.findOne({ postId: post._id, userId: userId }) || null,
       Reaction.countDocuments({ postId: post._id }),
+      Follow.exists({
+        follower: userId,
+        following: post.authorId._id.toString(),
+      }),
     ]);
     // const savedPost = await SavedPost.findOne({ userId, postId: post._id });
     // const isSaved = savedPost !== null;
@@ -102,6 +103,7 @@ export class PostBuilderService {
         redVotes: post.engagement.redVotes,
         // saves: savedCounts,
       },
+      isFollowing: !!isFollowing,
       createdAt: post.createdAt,
       // updatedAt: post.updatedAt,
       // isDeleted: post.isDeleted||false,

@@ -4,6 +4,9 @@ import { PostBuilderService } from "../services/post_builder_service";
 import { Post } from "../models/post_model";
 import mongoose from "mongoose";
 import { Vote } from "../models/vote_model";
+import { Follow } from "../models/follow";
+import User from "../models/user_model";
+import { NotificationType, sendPushNotification } from "../config/onesignal";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -157,6 +160,59 @@ export const postController = {
     } catch (error) {
       console.error("Error casting vote:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  toggleFollow: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        return res.status(400).json({ message: "No follow data provided" });
+      }
+
+      const userId = res.locals.userId; // ← The actor (follower)
+      const { followId } = req.body; // ← The receiver (followed)
+
+      if (!followId) {
+        return res.status(400).json({ message: "Follow ID is required" });
+      }
+
+      if (followId === userId) {
+        return res.status(400).json({ message: "Cannot follow yourself" });
+      }
+
+      const follow = await Follow.findOne({
+        follower: userId,
+        following: followId,
+      });
+
+      if (follow) {
+        await follow.deleteOne();
+        return res.status(200).json({ message: "Unfollowed" });
+      } else {
+        await Follow.create({ follower: userId, following: followId });
+
+        const receiver = await User.findById(followId);
+
+        if (!receiver) {
+          res.status(404).json({ message: "User not found" });
+          return;
+        }
+
+        if (receiver.oneSignalPlayerId) {
+          await sendPushNotification(
+            receiver._id.toString(),
+            receiver.oneSignalPlayerId,
+            NotificationType.FOLLOW,
+            `${res.locals.user.displayName} started following you.`,
+            `/profile/${userId}`
+          );
+        }
+
+        return res.status(200).json({ message: "Followed" });
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 };

@@ -15,4 +15,7 @@ router.post("/reverse-image", searchMedia.single("file"), appServiceController.r
 router.get("/get-sex-offenders", appServiceController.getSexOffendersByLocation);
 router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByName);
 
+router.get("/phone-lookup", appServiceController.phoneLookup);
+router.post("/name-lookup", appServiceController.nameLookup);
+
 export default router;

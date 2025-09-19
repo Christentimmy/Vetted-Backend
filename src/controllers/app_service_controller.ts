@@ -106,10 +106,10 @@ export const appServiceController = {
 
   phoneLookup: async (req: Request, res: Response) => {
     try {
-      if (!req.body) {
+      if (!req.query) {
         return res.status(400).json({ message: "Phone is required" });
       }
-      const { phone } = req.body;
+      const phone = req.query.phone.toString();
       if (!phone) return res.status(400).json({ message: "Phone is required" });
 
       const result = await searchByPhoneNumber(phone);
@@ -124,13 +124,16 @@ export const appServiceController = {
       if (!req.body) {
         return res.status(400).json({ message: "Phone is required" });
       }
-      const { firstName, lastName, city, state } = req.body;
-      if (!firstName || !lastName)
-        return res
-          .status(400)
-          .json({ message: "First and last name required" });
+      const { name, street, city, state_code, zipcode } = req.body;
+      if (!name) return res.status(400).json({ message: "Name is required" });
 
-      const result = await searchByName(firstName, lastName, city, state);
+      const result = await searchByName(
+        name,
+        street,
+        city,
+        state_code,
+        zipcode
+      );
       res.json({ success: true, data: result });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });

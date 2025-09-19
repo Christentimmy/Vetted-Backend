@@ -19,7 +19,7 @@ export const searchByPhoneNumber = async (phoneNumber: string) => {
     const url = `${BASE_URL}/person/?phone=${encodeURIComponent(phoneNumber)}`;
     const { data } = await axios.get(url, {
       headers: {
-        "x-api-key": WHITEPAGES_API_KEY.toString(),
+        "X-Api-Key": WHITEPAGES_API_KEY.toString(),
         "Content-Type": "application/json",
       },
     });
@@ -33,36 +33,31 @@ export const searchByPhoneNumber = async (phoneNumber: string) => {
   }
 };
 
-/**
- * Search by name + location
- * @param firstName First name
- * @param lastName Last name
- * @param city City (optional)
- * @param state State (optional, 2-letter)
- */
+
 export const searchByName = async (
-  firstName: string,
-  lastName: string,
+  name: string,
+  street?: string,
   city?: string,
-  state?: string
+  state_code?: string,
+  zipcode?: string
 ) => {
   try {
     const params = new URLSearchParams({
-      //   api_key: WHITEPAGES_API_KEY || "",
-      first_name: firstName,
-      last_name: lastName,
+      name,
     });
-
+    if (street) params.append("street", street);
     if (city) params.append("city", city);
-    if (state) params.append("state", state);
+    if (state_code) params.append("state_code", state_code);
+    if (zipcode) params.append("zipcode", zipcode);
 
-    const url = `${BASE_URL}/person?${params.toString()}`;
+    const url = `${BASE_URL}/person/?${params.toString()}`;
+
     const { data } = await axios.get(url, {
       headers: {
-        "x-api-key": WHITEPAGES_API_KEY.toString(),
-        "Content-Type": "application/json",
+        "X-Api-Key": WHITEPAGES_API_KEY || "",
       },
     });
+
     return data;
   } catch (error: any) {
     console.error(

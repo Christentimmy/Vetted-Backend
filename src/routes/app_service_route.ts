@@ -12,5 +12,7 @@ router.use(statusChecker);
 
 router.get("/get-number-info", appServiceController.getNumberInfo);
 router.post("/reverse-image", searchMedia.single("file"), appServiceController.reverseImage);
+router.get("/get-sex-offenders", appServiceController.getSexOffendersByLocation);
+router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByName);
 
 export default router;

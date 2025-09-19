@@ -21,11 +21,11 @@ export const authController = {
         return;
       }
 
-      //   const response = await checkNumberValidity(phone);
-      //   if (response === false) {
-      //     res.status(400).json({ message: "Number is not valid" });
-      //     return;
-      //   }
+      const response = await checkNumberValidity(phone);
+      if (response === false) {
+        res.status(400).json({ message: "Number is not valid" });
+        return;
+      }
 
       const user = await UserModel.findOne({ phone });
       if (!user) {
@@ -77,17 +77,26 @@ export const authController = {
         return;
       }
 
-      //   const response = await checkNumberValidity(phone);
-      //   if (response === false) {
-      //     res.status(400).json({ message: "Number is not valid" });
-      //     return;
-      //   }
+      const response = await checkNumberValidity(phone);
+      if (response === false) {
+        res.status(400).json({ message: "Number is not valid" });
+        return;
+      }
+
 
       const existingUser = await UserModel.findOne({ phone });
       if (existingUser) {
         res.status(400).json({ message: "User already exists" });
         return;
       }
+
+      const result = await sendOtpToUserPhoneNumber(phone);
+      if (!result.success || !result.otp) {
+        res.status(500).json({ message: "Failed to send OTP" });
+        return;
+      }
+
+      await redisController.saveOtpToStore(phone, result.otp.toString());
 
       const user = new UserModel({
         phone,
@@ -101,7 +110,6 @@ export const authController = {
       res.status(201).json({
         message: "User registered successfully",
         token: jwtToken,
-        email: user.email,
       });
     } catch (error) {
       console.log(error);

@@ -68,9 +68,7 @@ export const getNumberDetails = async (phone: string) => {
       fields: "caller_name,line_type_intelligence",
     });
 
-    if (!result) {
-      return null;
-    }
+    if (!result) return null;
 
     return {
       phoneNumber: result.phoneNumber ?? null,
@@ -86,8 +84,8 @@ export const getNumberDetails = async (phone: string) => {
       mnc: result.lineTypeIntelligence?.mobileNetworkCode ?? null,
       errorCode: result.lineTypeIntelligence?.errorCode ?? null,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching Number Details:", error);
-    return;
+    throw new Error("Twilio lookup failed"); // let controller catch it
   }
 };

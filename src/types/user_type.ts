@@ -25,4 +25,11 @@ export interface IUser extends Document {
     coordinates: [number, number]; // [lng, lat]
   };
   oneSignalPlayerId: string;
+  stripeCustomerId?: string;
+  subscription?: {
+    planId?: string;
+    status?: "active" | "canceled" | "past_due" | "unpaid" | "incomplete";
+    currentPeriodEnd?: Date;
+    cancelAtPeriodEnd?: boolean;
+  };
 }

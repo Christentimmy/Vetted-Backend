@@ -63,6 +63,13 @@ const userSchema = new mongoose.Schema<IUser>(
       coordinates: { type: [Number], default: [0, 0] }, //lng,lat
     },
     oneSignalPlayerId: { type: String },
+    stripeCustomerId: { type: String },
+    subscription: {
+      planId: { type: String },
+      status: { type: String, enum: ["active", "canceled", "past_due", "unpaid", "incomplete"], default: "active" },
+      currentPeriodEnd: { type: Date },
+      cancelAtPeriodEnd: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,

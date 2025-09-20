@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   phone: string;
   avatar: string;
+  password: string;
   bio: string;
   dateOfBirth: Date;
   accountStatus: "active" | "inactive" | "banned" | "suspended";
@@ -28,7 +29,7 @@ export interface IUser extends Document {
   role: "user" | "admin" | "super_admin";
   subscription?: {
     planId?: string;
-    status?: "active" | "canceled" | "past_due" | "unpaid" | "incomplete";
+    status?: "active" | "canceled" | "past_due" | "unpaid" | "incomplete" | "none";
     currentPeriodEnd?: Date;
     cancelAtPeriodEnd?: boolean;
   };

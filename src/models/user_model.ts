@@ -20,7 +20,12 @@ const userSchema = new mongoose.Schema<IUser>(
         partialFilterExpression: { phone: { $type: "string" } },
       },
     },
-    role: { type: String, enum: ["user", "admin", "super_admin"], default: "user" },
+    password: { type: String },
+    role: {
+      type: String,
+      enum: ["user", "admin", "super_admin"],
+      default: "user",
+    },
     avatar: { type: String },
     bio: {
       type: String,
@@ -66,7 +71,18 @@ const userSchema = new mongoose.Schema<IUser>(
     stripeCustomerId: { type: String },
     subscription: {
       planId: { type: String },
-      status: { type: String, enum: ["active", "canceled", "past_due", "unpaid", "incomplete"], default: "active" },
+      status: {
+        type: String,
+        enum: [
+          "active",
+          "canceled",
+          "past_due",
+          "unpaid",
+          "incomplete",
+          "none",
+        ],
+        default: "none",
+      },
       currentPeriodEnd: { type: Date },
       cancelAtPeriodEnd: { type: Boolean, default: false },
     },

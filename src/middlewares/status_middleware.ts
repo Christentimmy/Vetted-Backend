@@ -55,8 +55,43 @@ export async function adminStatusChecker(
 ): Promise<void> {
   try {
     const role = res.locals.role;
-    if (role !== "admin" || role !== "super_admin" || role === null) {
+    const userId = res.locals.userId;
+    if (role !== "admin" && role !== "super_admin") {
       res.status(403).json({ message: "Access denied. Admin only" });
+      return;
+    }
+    const user = await userSchema.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    if (user.accountStatus === "banned") {
+      res.status(400).json({ message: "Account banned" });
+      return;
+    }
+    if (user.accountStatus === "suspended") {
+      res.status(400).json({ message: "Account suspended" });
+      return;
+    }
+
+    res.locals.userId = userId;
+    res.locals.user = user;
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function superAdminStatusChecker(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const role = res.locals.role;
+    if (role !== "super_admin" || role === null) {
+      res.status(403).json({ message: "Access denied. Super Admin only" });
       return;
     }
     next();

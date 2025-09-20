@@ -9,6 +9,7 @@ import {
   getSexOffendersNearby,
   getSexOffendersByName,
 } from "../services/crimeometer_service";
+import { logSearch } from "../services/search_logger";
 
 export const appServiceController = {
   getNumberInfo: async (req: Request, res: Response) => {
@@ -80,6 +81,15 @@ export const appServiceController = {
         return res.status(404).json({ message: "No offenders found nearby" });
       }
 
+      // Log the search
+      await logSearch({
+        userId: res.locals.user?._id,
+        searchType: "sex_offender",
+        query: { lat, lng, radius, page },
+        resultCount: offenders?.length || 0,
+        req,
+      });
+
       res.json({ message: "Offenders found", data: offenders });
     } catch (error) {
       console.error(error);
@@ -113,6 +123,14 @@ export const appServiceController = {
       if (!phone) return res.status(400).json({ message: "Phone is required" });
 
       const result = await searchByPhoneNumber(phone);
+
+      await logSearch({
+        userId: res.locals.user?._id,
+        searchType: "phone",
+        query: { phone },
+        resultCount: result?.length || 0,
+        req,
+      });
       res.json({ success: true, data: result });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });
@@ -134,6 +152,16 @@ export const appServiceController = {
         state_code,
         zipcode
       );
+
+      // Log the search
+      await logSearch({
+        userId: res.locals.user?._id,
+        searchType: "name",
+        query: { name, street, city, state_code, zipcode },
+        resultCount: result?.length || 0,
+        req,
+      });
+
       res.json({ success: true, data: result });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });

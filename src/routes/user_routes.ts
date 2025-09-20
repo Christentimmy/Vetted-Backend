@@ -4,6 +4,7 @@ import { userController } from "../controllers/user_controller";
 import { uploadProfile } from "../middlewares/upload";
 import tokenValidationMiddleware  from "../middlewares/token_validator";
 import { statusChecker } from "../middlewares/status_middleware";
+import { reportController } from "../controllers/report_controller";
 
 
 const router = express.Router();
@@ -33,6 +34,8 @@ router.get("/get-my-posts", userController.getMyPost);
 router.post('/create-alert', userController.createAlert);
 router.get('/get-alerts', userController.getUserAlerts);
 router.delete('/delete-alert/:alertId', userController.deleteAlert);
+
+router.post('/create-report', reportController.createReport);
 
 
 export default router;

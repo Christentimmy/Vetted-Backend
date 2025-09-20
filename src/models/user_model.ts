@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema<IUser>(
         partialFilterExpression: { phone: { $type: "string" } },
       },
     },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
+    role: { type: String, enum: ["user", "admin", "super_admin"], default: "user" },
     avatar: { type: String },
     bio: {
       type: String,

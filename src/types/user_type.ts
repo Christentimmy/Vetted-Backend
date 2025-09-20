@@ -4,7 +4,6 @@ export interface IUser extends Document {
   displayName: string;
   email: string;
   phone: string;
-  role: string;
   avatar: string;
   bio: string;
   dateOfBirth: Date;
@@ -26,6 +25,7 @@ export interface IUser extends Document {
   };
   oneSignalPlayerId: string;
   stripeCustomerId?: string;
+  role: "user" | "admin" | "super_admin";
   subscription?: {
     planId?: string;
     status?: "active" | "canceled" | "past_due" | "unpaid" | "incomplete";

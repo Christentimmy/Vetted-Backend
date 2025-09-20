@@ -4,6 +4,30 @@ import SearchLog from "../models/search_model";
 import { Post } from "../models/post_model";
 
 export const adminController = {
+  createAdmin: async (req: Request, res: Response) => {
+    try {
+      if(!req.body){
+        return res.status(400).json({ message: "Invalid request" });
+      }
+      const { email, password, role = "admin" } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const user = await UserModel.create({
+        email,
+        password,
+        role: "super_admin",
+      });
+
+      
+
+      res.json({ message: "Admin created successfully", data: user });
+    } catch (error) {
+      console.error("Error creating admin:", error);
+      res.status(500).json({ message: "Internal server error" }); 
+    }
+  },
 
   getDashboardStats: async (req: Request, res: Response) => {
     try {
@@ -23,7 +47,7 @@ export const adminController = {
             },
           }),
           Post.countDocuments(),
-          UserModel.countDocuments({"subscription.status": "active"}),
+          UserModel.countDocuments({ "subscription.status": "active" }),
         ]);
 
       res.json({
@@ -40,6 +64,4 @@ export const adminController = {
       res.status(500).json({ message: "Internal server error" });
     }
   },
-
-  
 };

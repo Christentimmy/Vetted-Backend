@@ -10,6 +10,7 @@ import postRoutes from "./routes/post_routes";
 import messageRoutes from "./routes/message_route";
 import appServiceRoutes from "./routes/app_service_route";
 import subscriptionRoutes from "./routes/subscription_routes";
+import adminRoutes from "./routes/admin_route";
 
 const app: Express = express();
 const port = config.port;
@@ -25,6 +26,7 @@ app.use("/api/post", postRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/services", appServiceRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Connect to database
 connectToDatabase();

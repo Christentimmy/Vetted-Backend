@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const CRIMEOMETER_API_KEY = process.env.CRIMEOMETER_API_KEY!;
-console.log(CRIMEOMETER_API_KEY);
 const BASE_URL = "https://api.crimeometer.com/v3";
 
 export const getSexOffendersNearby = async (

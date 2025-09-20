@@ -5,10 +5,10 @@ import User from "../models/user_model";
 import { NotificationType, sendPushNotification } from "../config/onesignal";
 import mongoose from "mongoose";
 import Notification from "../models/notification_model";
-
+import { Post } from "../models/post_model";
 import { Block } from "../models/block_model";
 import { IUser } from "../types/user_type";
-
+import { PostBuilderService } from "../services/post_builder_service";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -400,6 +400,30 @@ export const userController = {
       });
     } catch (error) {
       console.error("Error fetching blocked users:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getMyPost: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+
+      const posts = await Post.find({ authorId: userId }).sort({
+        createdAt: -1,
+      });
+
+      const formattedPosts = await Promise.all(
+        posts.map((post) =>
+          PostBuilderService.formatPostResponse(post, userId.toString())
+        )
+      );
+
+      res.status(200).json({
+        message: "Posts fetched successfully",
+        data: formattedPosts,
+      });
+    } catch (error) {
+      console.error("Error fetching my posts:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },

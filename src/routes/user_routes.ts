@@ -28,6 +28,7 @@ router.patch("/mark-notification-as-read", userController.markNotificationAsRead
 
 router.patch("/toggle-block", userController.toggleBlock);
 router.get("/get-blocked-users", userController.getBlockedUsers);
+router.get("/get-my-posts", userController.getMyPost);
 
 
 export default router;

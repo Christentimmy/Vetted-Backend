@@ -31,6 +31,9 @@ router.delete("/delete-comment", postController.deleteComment);
 router.post("/vote-on-poll", postController.voteOnPoll);
 router.delete("/delete-post", postController.deletePost);
 
+router.post("/toggle-save-post", postController.toggleSavePost);
+router.get("/get-saved-posts", postController.getSavedPosts);
+
 export default router;
 
 

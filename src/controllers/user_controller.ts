@@ -9,6 +9,7 @@ import { Post } from "../models/post_model";
 import { Block } from "../models/block_model";
 import { IUser } from "../types/user_type";
 import { PostBuilderService } from "../services/post_builder_service";
+import Alert from "../models/alert_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -425,6 +426,84 @@ export const userController = {
     } catch (error) {
       console.error("Error fetching my posts:", error);
       return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  createAlert: async (req: Request, res: Response) => {
+    try {
+      const { name } = req.body;
+      const userId = res.locals.user._id;
+
+      const existingAlert = await Alert.findOne({
+        userId,
+        name: name.toLowerCase(),
+      });
+      if (existingAlert) {
+        return res.status(400).json({
+          message: "You already have an alert for this name",
+        });
+      }
+
+      const alert = new Alert({
+        userId,
+        name: name.toLowerCase(),
+      });
+
+      await alert.save();
+
+      res.status(201).json({
+        message: "Alert created successfully",
+        data: alert,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+      });
+    }
+  },
+
+  getUserAlerts: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+      const alerts = await Alert.find({ userId, isActive: true });
+
+      res.status(200).json({
+        message: "Alerts fetched successfully",
+        data: alerts,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+      });
+    }
+  },
+
+  deleteAlert: async (req: Request, res: Response) => {
+    try {
+      const { alertId } = req.params;
+      const userId = res.locals.user._id;
+
+      const alert = await Alert.findOneAndDelete({
+        _id: alertId,
+        userId,
+      });
+
+      if (!alert) {
+        return res.status(404).json({
+          message: "Alert not found",
+        });
+      }
+
+      res.status(200).json({
+        message: "Alert deleted successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Server error",
+        error: error.message,
+      });
     }
   },
 };

@@ -12,6 +12,7 @@ import { Reaction } from "../models/reaction_model";
 import { IPollOption } from "../types/post_type";
 import VotePoll from "../models/votepoll_model";
 import { PostViewer } from "../models/post_viewer_model";
+import SavedPost from "../models/saved_post_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -707,4 +708,55 @@ export const postController = {
       return res.status(500).json({ message: "Internal server error" });
     }
   },
+
+  toggleSavePost: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+      if(!req.body){
+        return res.status(400).json({ message: "No post data provided" });
+      }
+      const { postId } = req.body;
+
+      if (!postId) {
+        res.status(400).json({ message: "Post ID is required" });
+        return;
+      }
+
+      const existing = await SavedPost.findOne({ userId, postId });
+
+      if (existing) {
+        await existing.deleteOne();
+        await Post.updateOne({ _id: postId }, { $inc: { saves: -1 } });
+        return res.json({ message: "Post unsaved" });
+      } else {
+        await SavedPost.create({ userId, postId });
+        await Post.updateOne({ _id: postId }, { $inc: { saves: 1 } });
+        return res.json({ message: "Post saved" });
+      }
+    } catch (error) {
+      console.error("Error toggling save post:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getSavedPosts: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.user._id;
+
+      const saved = await SavedPost.find({ userId })
+        .populate("postId", "content media")
+        .sort({ createdAt: -1 });
+
+      res.status(200).json({
+        message: "Saved posts fetched successfully",
+        data: saved,
+      });
+    } catch (error) {
+      console.error("Error fetching saved posts:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+
+  
 };

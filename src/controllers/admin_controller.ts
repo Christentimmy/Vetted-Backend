@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import UserModel from "../models/user_model";
 import SearchLog from "../models/search_model";
 import { Post } from "../models/post_model";
-import MessageModel from "../models/message_model";
 
 export const adminController = {
 
@@ -14,7 +13,7 @@ export const adminController = {
       const endOfToday = new Date();
       endOfToday.setHours(23, 59, 59, 999);
 
-      const [totalUsers, todaySearches, totalPosts, totalMessages] =
+      const [totalUsers, todaySearches, totalPosts, totalActiveSubscriptions] =
         await Promise.all([
           UserModel.countDocuments(),
           SearchLog.countDocuments({
@@ -24,7 +23,7 @@ export const adminController = {
             },
           }),
           Post.countDocuments(),
-          MessageModel.countDocuments(),
+          UserModel.countDocuments({"subscription.status": "active"}),
         ]);
 
       res.json({
@@ -33,7 +32,7 @@ export const adminController = {
           totalUsers,
           todaySearches,
           totalPosts,
-          totalMessages,
+          totalActiveSubscriptions,
         },
       });
     } catch (error) {

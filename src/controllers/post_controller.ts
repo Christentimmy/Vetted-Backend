@@ -13,7 +13,7 @@ import { IPollOption } from "../types/post_type";
 import VotePoll from "../models/votepoll_model";
 import { PostViewer } from "../models/post_viewer_model";
 import SavedPost from "../models/saved_post_model";
-
+import Alert from "../models/alert_model";
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const postController = {
@@ -72,6 +72,25 @@ export const postController = {
       await newPost.save();
 
       res.status(201).json({ message: "Post created successfully" });
+
+      const postName = text.toLowerCase(); // or whatever field you want to match against
+      const matchingAlerts = await Alert.find({ 
+        name: postName,
+        isActive: true,
+        userId: { $ne: newPost.authorId } // Don't alert the post author
+      }).populate<{userId: IUser}>('userId'); // Assuming you want to notify by email
+  
+      // Send notifications for each matching alert
+      for (const alert of matchingAlerts) {
+        const user = alert.userId;
+        await sendPushNotification(
+          user._id.toString(),
+          user.oneSignalPlayerId,
+          NotificationType.SYSTEM,
+          `A new post matching your alert "${alert.name}" has been created!`,
+          `/posts/${newPost._id}`
+        );
+      }
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Internal server error" });
@@ -758,5 +777,5 @@ export const postController = {
   },
 
 
-  
+
 };

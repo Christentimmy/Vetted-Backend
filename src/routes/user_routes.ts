@@ -30,5 +30,9 @@ router.patch("/toggle-block", userController.toggleBlock);
 router.get("/get-blocked-users", userController.getBlockedUsers);
 router.get("/get-my-posts", userController.getMyPost);
 
+router.post('/create-alert', userController.createAlert);
+router.get('/get-alerts', userController.getUserAlerts);
+router.delete('/delete-alert/:alertId', userController.deleteAlert);
+
 
 export default router;

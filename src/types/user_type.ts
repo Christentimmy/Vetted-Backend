@@ -33,6 +33,7 @@ export interface IUser extends Document {
     currentPeriodEnd?: Date;
     cancelAtPeriodEnd?: boolean;
   };
+  isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

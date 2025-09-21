@@ -29,7 +29,7 @@ export async function sendBulkEmail(emails: string[], subject: string, recipient
                 from: process.env.RESEND_FROM!,
                 to: email,
                 subject: subject,
-                html: generateEmailTemplate("FastBuss", recipientName, message),
+                html: generateEmailTemplate("Vetted", recipientName, message),
             })
         );
 

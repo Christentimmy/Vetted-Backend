@@ -20,11 +20,11 @@ export const adminController = {
       if (!req.body) {
         return res.status(400).json({ message: "Invalid request" });
       }
-      const { email, password, role = "admin" } = req.body;
-      if (!email || !password) {
-        return res
-          .status(400)
-          .json({ message: "Email and password are required" });
+      const { email, password, role = "admin", username } = req.body;
+      if (!email || !password || !username) {
+        return res.status(400).json({
+          message: "Email, password and username name are required",
+        });
       }
 
       const salt = await bcryptjs.genSalt(10);
@@ -33,7 +33,8 @@ export const adminController = {
       const user = await UserModel.create({
         email,
         password: hashedPassword,
-        role: "super_admin",
+        role,
+        displayName: username,
       });
 
       const jwtToken = generateToken(user);
@@ -43,6 +44,7 @@ export const adminController = {
         data: user,
         token: jwtToken,
       });
+
     } catch (error) {
       console.error("Error creating admin:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -89,6 +91,75 @@ export const adminController = {
       res.json({ message: "Admin logged in successfully", token: jwtToken });
     } catch (error) {
       console.error("Error logging in admin:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getAllAdmins: async (req: Request, res: Response) => {
+    try {
+
+      const admins = await UserModel.find({
+        role: { $ne: "user" },
+        isDeleted: false,
+      });
+
+      const mappedResponse = admins.map((admin) => {
+        return {
+          username: admin.displayName,
+          email: admin.email,
+          role: admin.role,
+          accountStatus: admin.accountStatus,
+          createdAt: admin.createdAt || new Date(),
+          updatedAt: admin.updatedAt || new Date(),
+          _id: admin._id,
+        };
+      });
+      res.json({ message: "Success", data: mappedResponse });
+    } catch (error) {
+      console.error("Error fetching all admins:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  toggleActive: async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (user.accountStatus === "active") {
+        user.accountStatus = "suspended";
+      } else {
+        user.accountStatus = "active";
+      }
+      await user.save();
+      res.json({ message: "Success" });
+    } catch (error) {
+      console.error("Error deactivating admin:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  deleteAdmin: async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      user.isDeleted = true;
+      await user.save();
+      res.json({ message: "Success" });
+    } catch (error) {
+      console.error("Error deleting admin:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   },
@@ -355,14 +426,17 @@ export const adminController = {
   },
 
   //Report Page
-  getRports: async (req: Request, res: Response) => {
+  getReports: async (req: Request, res: Response) => {
     try {
       let { page = 1, limit = 20 } = req.query;
       page = parseInt(page as string);
       limit = parseInt(limit as string);
       const skip = (page - 1) * limit;
 
-      const posts = await Post.find({ reportCount: { $gt: 10 } })
+      const posts = await Post.find({
+        reportCount: { $gt: 10 },
+        isDeleted: false,
+      })
         .skip(skip)
         .limit(limit);
 
@@ -377,7 +451,11 @@ export const adminController = {
         };
       });
 
-      const total = await Post.countDocuments();
+      const total = await Post.countDocuments({
+        reportCount: { $gt: 10 },
+        isDeleted: false,
+      });
+
       res.json({
         message: "Success",
         data: mappedResponse,
@@ -391,6 +469,21 @@ export const adminController = {
       });
     } catch (error) {
       console.error("Error fetching reports:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  deletePost: async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.body;
+      if (!postId) {
+        res.status(400).json({ message: "Post Id is required" });
+        return;
+      }
+      await Post.findByIdAndUpdate({ _id: postId }, { isDeleted: true });
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.log("Error deleting post", error);
       res.status(500).json({ message: "Internal server error" });
     }
   },

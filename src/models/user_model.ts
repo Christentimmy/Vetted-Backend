@@ -86,6 +86,7 @@ const userSchema = new mongoose.Schema<IUser>(
       currentPeriodEnd: { type: Date },
       cancelAtPeriodEnd: { type: Boolean, default: false },
     },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

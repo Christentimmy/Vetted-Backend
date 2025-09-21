@@ -20,7 +20,11 @@ router.get("/subscription-stats", adminController.getSubscriptionStat);
 router.get("/all-subscriptions", adminController.getAllSubscriptions);
 router.get("/user-invoice-history/:userId", adminController.getUserInvoiceHistory);
 router.post("/cancel-subscription", adminController.cancelUserSubscription);
-router.get("/get-post-reports", adminController.getRports);
+router.get("/get-post-reports", adminController.getReports);
+router.post("/delete-post", adminController.deletePost);
+router.get("/all-admins", adminController.getAllAdmins);
+router.post("/toggle-active", adminController.toggleActive);
+router.post("/delete-admin", adminController.deleteAdmin);
 
 router.use(superAdminStatusChecker);
 router.post("/create-admin", adminController.createAdmin);

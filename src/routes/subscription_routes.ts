@@ -10,11 +10,14 @@ const router = express.Router();
 // Public routes
 router.get("/plans", subscriptionController.getPlans);
 
-router.post(
-  "/webhook",
-  express.raw({ type: "application/json" }),
-  subscriptionController.stripeWebhook
-);
+// router.post(
+//   "/webhook",
+//   express.raw({ type: "application/json" }),
+//   subscriptionController.stripeWebhook
+// );
+
+router.get("/success", subscriptionController.success);
+router.get("/canceled", subscriptionController.cancelled);
 
 router.use(tokenValidationMiddleware, statusChecker, addSubscriptionInfo);
 

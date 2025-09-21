@@ -20,20 +20,13 @@ export const subscriptionController = {
 
   createSubscription: async (req: Request, res: Response) => {
     try {
-      const { priceId } = req.body;
       const userId = res.locals.userId;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });
       }
 
-      if (!priceId) {
-        return res
-          .status(400)
-          .json({ success: false, error: "Price ID is required" });
-      }
-
-      const session = await createCheckoutSession(userId, priceId);
+      const session = await createCheckoutSession(userId);
 
       res.json({
         success: true,
@@ -142,6 +135,15 @@ export const subscriptionController = {
     }
   },
 
+  success: async (req: Request, res: Response) => {
+    res.send("Payment Successful");
+    return;
+  },
+
+  cancelled: async (req: Request, res: Response) => {
+    res.send("Payment Cancelled");
+    return;
+  },
+
   stripeWebhook: handleWebhook,
 };
-

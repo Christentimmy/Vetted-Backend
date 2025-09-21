@@ -11,15 +11,26 @@ import messageRoutes from "./routes/message_route";
 import appServiceRoutes from "./routes/app_service_route";
 import subscriptionRoutes from "./routes/subscription_routes";
 import adminRoutes from "./routes/admin_route";
+import bodyParser from "body-parser";
 import cors from "cors";
+
+import { handleWebhook } from "./services/stripe_service";
 
 const app: Express = express();
 const port = config.port;
 
-app.use(cors({
-  origin: "http://localhost:5173", 
-  credentials: true, 
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+app.post(
+  "/api/subscription/webhook",
+  bodyParser.raw({ type: "application/json" }),
+  handleWebhook
+);
 
 // Middleware
 app.use(express.json());

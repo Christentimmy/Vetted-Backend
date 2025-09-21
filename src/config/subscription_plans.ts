@@ -15,7 +15,7 @@ export const PLANS = {
     id: "pro",
     name: "Pro",
     price: 15,
-    stripePriceId: "price_...",
+    stripePriceId: "price_1S9eCPCEHhMF7pKAM7I7yc18",
     features: ["Unlimited searches", "Advanced filters", "Priority support"],
     limits: {
       searches: 1000,

@@ -7,6 +7,20 @@ import {
 import generateToken from "../utils/token_generator";
 import { verifyGoogleToken } from "../services/google_token";
 import { redisController } from "./redis_controller";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import mongoose from "mongoose";
+import config from "../config/config";
+import tokenBlacklistSchema from "../models/token_blacklist_model";
+
+const token_secret = config.jwt.secret;
+const isValidObjectId = mongoose.Types.ObjectId.isValid;
+if (!token_secret) {
+    throw new Error("TOKEN_SECRET is not defined in the environment variables.");
+}
+interface DecodedToken extends JwtPayload {
+    id: string;
+    role: string;
+}
 
 export const authController = {
   loginWithNumber: async (req: Request, res: Response) => {
@@ -82,7 +96,6 @@ export const authController = {
         res.status(400).json({ message: "Number is not valid" });
         return;
       }
-
 
       const existingUser = await UserModel.findOne({ phone });
       if (existingUser) {
@@ -280,6 +293,50 @@ export const authController = {
       res
         .status(500)
         .json({ message: "An error occurred while processing your request." });
+    }
+  },
+
+  validateToken: async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.header("Authorization");
+
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Access denied. No token provided." });
+        return;
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      if (!token || token.split(".").length !== 3) {
+        res.status(400).json({ message: "Invalid token format." });
+        return;
+      }
+
+      const decoded = jwt.verify(token, token_secret) as DecodedToken;
+
+      const isBlacklisted = await tokenBlacklistSchema.findOne({ token });
+      if (isBlacklisted) {
+        res
+          .status(401)
+          .json({ message: "Token is invalid. Please log in again." });
+        return;
+      }
+
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        res.status(401).json({ message: "Token has expired." });
+        return;
+      }
+
+      if (!isValidObjectId(decoded.id)) {
+        res.status(400).json({ message: "Invalid user ID" });
+        return;
+      }
+
+      res.status(200).json({ message: "Token is valid." });
+      return;
+    } catch (error) {
+      console.error("Error in validateToken controller:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   },
 };

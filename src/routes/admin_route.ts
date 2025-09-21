@@ -13,6 +13,9 @@ router.post("/login", adminController.loginAdmin);
 router.use(tokenValidationMiddleware, adminStatusChecker);
 router.get("/dashboard-stats", adminController.getDashboardStats);
 router.get("/recent-looks-ups", adminController.recentLooksUps);
+router.get("/all-users", adminController.getAllUsers);
+router.post("/toggle-ban", adminController.toggleBan);
+router.post("/send-message", adminController.sendMessage);
 
 router.use(superAdminStatusChecker);
 router.post("/create-admin", adminController.createAdmin);

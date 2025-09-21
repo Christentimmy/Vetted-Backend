@@ -12,5 +12,6 @@ router.post("/google-login", authController.googleAuthSignIn);
 
 router.post("/send-number-otp", authController.sendNumberOtp);
 router.post("/verify-number-otp", authController.verifyNumberOtp);
+router.post("/validate-token", authController.validateToken);
 
 export default router;

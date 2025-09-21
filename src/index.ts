@@ -11,9 +11,15 @@ import messageRoutes from "./routes/message_route";
 import appServiceRoutes from "./routes/app_service_route";
 import subscriptionRoutes from "./routes/subscription_routes";
 import adminRoutes from "./routes/admin_route";
+import cors from "cors";
 
 const app: Express = express();
 const port = config.port;
+
+app.use(cors({
+  origin: "http://localhost:5173", 
+  credentials: true, 
+}));
 
 // Middleware
 app.use(express.json());

@@ -10,6 +10,7 @@ import { Block } from "../models/block_model";
 import { IUser } from "../types/user_type";
 import { PostBuilderService } from "../services/post_builder_service";
 import Alert from "../models/alert_model";
+import Subscription from "../models/subscription_model";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -507,3 +508,4 @@ export const userController = {
     }
   },
 };
+

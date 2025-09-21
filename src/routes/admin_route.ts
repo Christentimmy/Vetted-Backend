@@ -16,6 +16,11 @@ router.get("/recent-looks-ups", adminController.recentLooksUps);
 router.get("/all-users", adminController.getAllUsers);
 router.post("/toggle-ban", adminController.toggleBan);
 router.post("/send-message", adminController.sendMessage);
+router.get("/subscription-stats", adminController.getSubscriptionStat);
+router.get("/all-subscriptions", adminController.getAllSubscriptions);
+router.get("/user-invoice-history/:userId", adminController.getUserInvoiceHistory);
+router.post("/cancel-subscription", adminController.cancelUserSubscription);
+router.get("/get-post-reports", adminController.getRports);
 
 router.use(superAdminStatusChecker);
 router.post("/create-admin", adminController.createAdmin);

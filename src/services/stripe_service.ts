@@ -3,6 +3,7 @@ import User from "../models/user_model";
 import Subscription from "../models/subscription_model";
 import { PLANS } from "../config/subscription_plans";
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -143,6 +144,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
   console.log("Event", event.type);
 
+  // Use a transaction to ensure data consistency
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     switch (event.type) {
       case "checkout.session.completed":
@@ -176,10 +181,14 @@ export const handleWebhook = async (req: Request, res: Response) => {
         console.log(`Unhandled event type ${event.type}`);
     }
 
+    await session.commitTransaction();
     res.json({ received: true });
   } catch (error) {
+    await session.abortTransaction();
     console.error("Webhook error:", error);
     res.status(500).json({ error: "Webhook handler failed" });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -198,8 +207,6 @@ const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
 const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   const customerId = subscription.customer as string;
   const data = subscription.items.data[0];
-  console.log("Customer ID", data.current_period_end);
-  console.log("Customer ID", data.current_period_start);
 
   const user = await User.findOne({ stripeCustomerId: customerId });
   if (!user) return;
@@ -209,42 +216,80 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   );
   if (!plan) return;
 
-  // Update or create subscription record
-  await Subscription.findOneAndUpdate(
-    { stripeSubscriptionId: subscription.id },
+  // First, check if we already have this subscription
+  let subscriptionRecord = await Subscription.findOne({
+    $or: [
+      { stripeSubscriptionId: subscription.id },
+      {
+        userId: user._id,
+        status: { $in: ["active", "trialing", "past_due", "incomplete"] },
+      },
+    ],
+  });
+
+  // Prepare subscription data
+  const subscriptionData = {
+    userId: user._id,
+    stripeSubscriptionId: subscription.id,
+    stripeCustomerId: customerId,
+    status: subscription.status,
+    planId: plan.id,
+    planName: plan.name,
+    priceId: data.price.id,
+    currentPeriodStart: new Date(data.current_period_start * 1000),
+    currentPeriodEnd: new Date(data.current_period_end * 1000),
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    canceledAt: subscription.canceled_at
+      ? new Date(subscription.canceled_at * 1000)
+      : undefined,
+    trialStart: subscription.trial_start
+      ? new Date(subscription.trial_start * 1000)
+      : undefined,
+    trialEnd: subscription.trial_end
+      ? new Date(subscription.trial_end * 1000)
+      : undefined,
+  };
+
+  // If we found an existing subscription, update it
+  if (subscriptionRecord) {
+    // If we found a different subscription for this user, cancel it
+    if (subscriptionRecord.stripeSubscriptionId !== subscription.id) {
+      await Subscription.updateOne(
+        { _id: subscriptionRecord._id },
+        {
+          status: "canceled",
+          canceledAt: new Date(),
+          cancelAtPeriodEnd: true,
+        }
+      );
+    }
+    // Update the existing subscription
+    await Subscription.updateOne(
+      { _id: subscriptionRecord._id },
+      { $set: subscriptionData }
+    );
+  } else {
+    // Create new subscription if none exists
+    subscriptionRecord = new Subscription(subscriptionData);
+    await subscriptionRecord.save();
+  }
+
+  // Update user's subscription info
+  await User.updateOne(
+    { _id: user._id },
     {
-      userId: user._id,
-      stripeSubscriptionId: subscription.id,
-      stripeCustomerId: customerId,
-      status: subscription.status,
-      planId: plan.id,
-      planName: plan.name,
-      priceId: data.price.id,
-      currentPeriodStart: new Date(data.current_period_start * 1000),
-      currentPeriodEnd: new Date(data.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      canceledAt: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000)
-        : undefined,
-      trialStart: subscription.trial_start
-        ? new Date(subscription.trial_start * 1000)
-        : undefined,
-      trialEnd: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : undefined,
-    },
-    { upsert: true }
+      $set: {
+        "subscription.planId": plan.id,
+        "subscription.status": subscription.status,
+        "subscription.currentPeriodEnd": new Date(
+          data.current_period_end * 1000
+        ),
+        "subscription.cancelAtPeriodEnd": subscription.cancel_at_period_end,
+      },
+    }
   );
 
-  // Update user subscription info
-  await User.findByIdAndUpdate(user._id, {
-    subscription: {
-      planId: plan.id,
-      status: subscription.status,
-      currentPeriodEnd: new Date(data.current_period_end * 1000),
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    },
-  });
+  return subscriptionRecord;
 };
 
 const handleSubscriptionDeleted = async (subscription: Stripe.Subscription) => {
@@ -282,5 +327,39 @@ const handlePaymentSucceeded = async (invoice: any) => {
       invoice.subscription as string
     );
     await handleSubscriptionUpdated(subscription);
+  }
+};
+
+export const getUserStripeInvoiceHistory = async (customerId: string) => {
+  try {
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      expand: ["data.subscription"],
+    });
+
+    return invoices.data.map((invoice) => {
+      const subscription = (invoice as any).subscription as
+        | Stripe.Subscription
+        | string
+        | null;
+
+      return {
+        id: invoice.id,
+        amount: invoice.amount_paid,
+        status: invoice.status,
+        created: new Date(invoice.created * 1000),
+        subscriptionId:
+          subscription && typeof subscription !== "string"
+            ? subscription.id
+            : subscription,
+        subscriptionStatus:
+          subscription && typeof subscription !== "string"
+            ? subscription.status
+            : null,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching invoice history:", error);
+    return [];
   }
 };

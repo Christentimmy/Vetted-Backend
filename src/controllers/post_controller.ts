@@ -74,12 +74,12 @@ export const postController = {
       res.status(201).json({ message: "Post created successfully" });
 
       const postName = text.toLowerCase(); // or whatever field you want to match against
-      const matchingAlerts = await Alert.find({ 
+      const matchingAlerts = await Alert.find({
         name: postName,
         isActive: true,
-        userId: { $ne: newPost.authorId } // Don't alert the post author
-      }).populate<{userId: IUser}>('userId'); // Assuming you want to notify by email
-  
+        userId: { $ne: newPost.authorId }, // Don't alert the post author
+      }).populate<{ userId: IUser }>("userId"); // Assuming you want to notify by email
+
       // Send notifications for each matching alert
       for (const alert of matchingAlerts) {
         const user = alert.userId;
@@ -731,7 +731,7 @@ export const postController = {
   toggleSavePost: async (req: Request, res: Response) => {
     try {
       const userId = res.locals.user._id;
-      if(!req.body){
+      if (!req.body) {
         return res.status(400).json({ message: "No post data provided" });
       }
       const { postId } = req.body;
@@ -776,6 +776,28 @@ export const postController = {
     }
   },
 
+  reportPost: async (req: Request, res: Response) => {
+    try {
+      const { postId } = req.body;
 
+      if (!postId) {
+        res.status(400).json({ message: "Post ID is required" });
+        return;
+      }
 
+      const post = await Post.findById(postId);
+      if (!post) {
+        res.status(404).json({ message: "Post not found" });
+        return;
+      }
+
+      post.reportCount++;
+      await post.save();
+
+      return res.status(200).json({ message: "Post reported successfully" });
+    } catch (error) {
+      console.error("Error reporting post:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
 };

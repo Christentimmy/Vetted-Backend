@@ -10,12 +10,6 @@ const router = express.Router();
 // Public routes
 router.get("/plans", subscriptionController.getPlans);
 
-// router.post(
-//   "/webhook",
-//   express.raw({ type: "application/json" }),
-//   subscriptionController.stripeWebhook
-// );
-
 router.get("/success", subscriptionController.success);
 router.get("/canceled", subscriptionController.cancelled);
 
@@ -27,6 +21,6 @@ router.use(requireActiveSubscription);
 router.get("/current", subscriptionController.getCurrentSubscription);
 router.post("/cancel", subscriptionController.cancelUserSubscription);
 router.post("/reactivate", subscriptionController.reactivateUserSubscription);
-router.post("/portal", subscriptionController.getPortalSession);
+// router.post("/portal", subscriptionController.getPortalSession);
 
 export default router;

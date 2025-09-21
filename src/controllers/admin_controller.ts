@@ -5,8 +5,16 @@ import { Post } from "../models/post_model";
 import bcryptjs from "bcryptjs";
 import generateToken from "../utils/token_generator";
 import { sendEmail } from "../services/email_service";
+import {
+  getSubscription,
+  cancelSubscription,
+} from "../services/stripe_service";
+import subscriptionModel from "../models/subscription_model";
+import { IUser } from "../types/user_type";
+import { getUserStripeInvoiceHistory } from "../services/stripe_service";
 
 export const adminController = {
+  //Auth
   createAdmin: async (req: Request, res: Response) => {
     try {
       if (!req.body) {
@@ -85,6 +93,7 @@ export const adminController = {
     }
   },
 
+  //Dashboard
   getDashboardStats: async (req: Request, res: Response) => {
     try {
       const startOfToday = new Date();
@@ -134,6 +143,7 @@ export const adminController = {
     }
   },
 
+  //Users
   getAllUsers: async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -214,6 +224,173 @@ export const adminController = {
       res.json({ message: "Message sent successfully" });
     } catch (error) {
       console.error("Error sending message:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  //Subscription
+  getSubscriptionStat: async (req: Request, res: Response) => {
+    try {
+      const [
+        subscription,
+        activeSubscription,
+        canceledSubscription,
+        pastDueSubscription,
+      ] = await Promise.all([
+        subscriptionModel.countDocuments(),
+        subscriptionModel.countDocuments({ status: "active" }),
+        subscriptionModel.countDocuments({ status: "canceled" }),
+        subscriptionModel.countDocuments({ status: "past_due" }),
+      ]);
+
+      res.json({
+        message: "Success",
+        data: {
+          subscription,
+          activeSubscription,
+          canceledSubscription,
+          pastDueSubscription,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getAllSubscriptions: async (req: Request, res: Response) => {
+    try {
+      let { page = 1, limit = 20 } = req.query;
+      page = parseInt(page as string);
+      limit = parseInt(limit as string);
+      const skip = (page - 1) * limit;
+
+      const total = await subscriptionModel.countDocuments();
+      const subscriptions = await subscriptionModel
+        .find()
+        .populate<{ userId: IUser }>("userId", "email displayName phone")
+        .skip(skip)
+        .limit(limit);
+
+      const mappedResponse = subscriptions.map((subscription) => {
+        return {
+          id: subscription._id,
+          userId: subscription.userId.id,
+          displayName: subscription.userId.displayName,
+          email: subscription.userId.email || "",
+          phoneNumber: subscription.userId.phone || "",
+          planName: subscription.planName,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          status: subscription.status,
+          createdAt: subscription.createdAt,
+          updatedAt: subscription.updatedAt,
+        };
+      });
+
+      res.json({
+        message: "Success",
+        data: mappedResponse,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          hasMore: total > page * limit,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getUserInvoiceHistory: async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      if (!userId) {
+        res.status(400).json({ message: "User ID is required" });
+        return;
+      }
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      if (!user.stripeCustomerId) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      const invoiceHistory = await getUserStripeInvoiceHistory(
+        user.stripeCustomerId
+      );
+      res.json({ message: "Success", data: invoiceHistory });
+    } catch (error) {
+      console.error("Error fetching invoice history:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  cancelUserSubscription: async (req: Request, res: Response) => {
+    try {
+      const userId = req.body.userId;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: "Unauthorized" });
+        return;
+      }
+
+      await cancelSubscription(userId);
+
+      res.status(200).json({
+        message:
+          "Subscription will be canceled at the end of the current period",
+      });
+    } catch (error: any) {
+      console.error("Cancel subscription error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to cancel subscription",
+      });
+    }
+  },
+
+  //Report Page
+  getRports: async (req: Request, res: Response) => {
+    try {
+      let { page = 1, limit = 20 } = req.query;
+      page = parseInt(page as string);
+      limit = parseInt(limit as string);
+      const skip = (page - 1) * limit;
+
+      const posts = await Post.find({ reportCount: { $gt: 10 } })
+        .skip(skip)
+        .limit(limit);
+
+      const mappedResponse = posts.map((post) => {
+        return {
+          _id: post._id,
+          title: post.content.text,
+          media: post.media,
+          reportCount: post.reportCount,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        };
+      });
+
+      const total = await Post.countDocuments();
+      res.json({
+        message: "Success",
+        data: mappedResponse,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          hasMore: total > page * limit,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching reports:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   },

@@ -70,15 +70,14 @@ export const subscriptionController = {
       const userId = res.locals.userId;
 
       if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized" });
+         res.status(401).json({ success: false, error: "Unauthorized" });
+         return;
       }
 
       await cancelSubscription(userId);
 
-      res.json({
-        success: true,
-        message:
-          "Subscription will be canceled at the end of the current period",
+      res.status(200).json({
+        message: "Subscription will be canceled at the end of the current period",
       });
     } catch (error: any) {
       console.error("Cancel subscription error:", error);
@@ -144,6 +143,4 @@ export const subscriptionController = {
     res.send("Payment Cancelled");
     return;
   },
-
-  stripeWebhook: handleWebhook,
 };

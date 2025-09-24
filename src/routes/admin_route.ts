@@ -5,6 +5,7 @@ import {
   adminStatusChecker,
   superAdminStatusChecker,
 } from "../middlewares/status_middleware";
+import { supportTicketController } from "../controllers/support_ticket_controller";
 
 const router = express.Router();
 
@@ -25,6 +26,8 @@ router.post("/delete-post", adminController.deletePost);
 router.get("/all-admins", adminController.getAllAdmins);
 router.post("/toggle-active", adminController.toggleActive);
 router.post("/delete-admin", adminController.deleteAdmin);
+router.post("/mark-ticket", supportTicketController.markAsResolved);
+
 
 router.use(superAdminStatusChecker);
 router.post("/create-admin", adminController.createAdmin);

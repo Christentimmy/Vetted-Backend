@@ -34,10 +34,10 @@ export const postController = {
 
       const user = res.locals.user;
 
-      if (!text && !req.files?.length && !poll) {
-        res
-          .status(400)
-          .json({ message: "Post must contain text, media, poll" });
+      if (!text && !req.files?.length && !poll && !postType) {
+        res.status(400).json({
+          message: "Post must contain text, media, poll",
+        });
         return;
       }
 
@@ -53,13 +53,21 @@ export const postController = {
         }
       }
 
+      if (postType === "regular" && !poll) {
+        if (!req.body.text || !req.body.title) {
+          return res.status(400).json({
+            message: "Text and title are required for regular posts",
+          });
+        }
+      }
+
       // Process poll and content in parallel
-      const [processedPoll, contentData] = await Promise.all([
+      const [processedPoll, mediaData] = await Promise.all([
         PostDataService.processPoll(req.body.poll),
-        PostDataService.processContent(req.body.text, files),
+        PostDataService.processMedia(files),
       ]);
 
-      const { mediaItems } = contentData;
+      const { mediaItems } = mediaData;
 
       const postData = PostBuilderService.buildPostData({
         user,
@@ -73,7 +81,7 @@ export const postController = {
 
       res.status(201).json({ message: "Post created successfully" });
 
-      const postName = text.toLowerCase(); // or whatever field you want to match against
+      const postName = (text ?? "").toLowerCase(); // Use empty string if text is null/undefined
       const matchingAlerts = await Alert.find({
         name: postName,
         isActive: true,

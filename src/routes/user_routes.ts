@@ -1,13 +1,15 @@
 
 import express from "express";
 import { userController } from "../controllers/user_controller";
-import { uploadProfile } from "../middlewares/upload";
+import { uploadProfile, genderMedia } from "../middlewares/upload";
 import tokenValidationMiddleware  from "../middlewares/token_validator";
 import { statusChecker } from "../middlewares/status_middleware";
 import { reportController } from "../controllers/report_controller";
 
 
 const router = express.Router();
+
+router.post("/user-exist", userController.userExist);
 
 router.use(tokenValidationMiddleware);
 
@@ -20,6 +22,8 @@ router.patch("/selfie-verified", userController.profileVerified);
 
 router.get("/get-user-status", userController.getUserStatus);
 router.get("/get-user-details", userController.getUserDetails);
+router.post("/save-signal-id", userController.saveSignalId);
+router.post("/verify-gender", genderMedia.single("video"), userController.verifyGender);
 
 router.use(statusChecker);
 

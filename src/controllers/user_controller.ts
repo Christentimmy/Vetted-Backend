@@ -11,10 +11,32 @@ import { IUser } from "../types/user_type";
 import { PostBuilderService } from "../services/post_builder_service";
 import Alert from "../models/alert_model";
 import Subscription from "../models/subscription_model";
+import { detectGenderWithGemini } from "../utils/gemini_helper";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const userController = {
+  
+  userExist: async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ message: "Email is required" });
+        return;
+      }
+      const user = await UserModel.findOne({ email });
+      if (!user) {
+        res.status(400).json({ message: "User does not exist" });
+        return;
+      }
+      res.status(200).json({ message: "User exists" });
+      return;
+    } catch (error) {
+      console.error("User exist error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
   updateName: async (req: Request, res: Response) => {
     try {
       if (!req.body) {
@@ -134,9 +156,24 @@ export const userController = {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
-      const { relationStatus } = req.body;
+      let { relationStatus } = req.body;
+      relationStatus = relationStatus.toLowerCase();
       if (!relationStatus) {
         res.status(400).json({ message: "Relation status is required" });
+        return;
+      }
+      if (
+        !Object.values([
+          "single",
+          "in a relationship",
+          "engaged",
+          "married",
+          "deparated",
+          "divorced",
+          "widowed",
+        ]).includes(relationStatus)
+      ) {
+        res.status(400).json({ message: "Invalid relation status" });
         return;
       }
       const user = await UserModel.findById(userId);
@@ -235,7 +272,7 @@ export const userController = {
     try {
       const userId = res.locals.userId;
       const user = await User.findById(userId).select(
-        "phone accountStatus isPhoneVerified isProfileCompleted"
+        "phone accountStatus isPhoneVerified isProfileCompleted displayName dateOfBirth relationshipStatus location"
       );
 
       if (!user) {
@@ -301,6 +338,36 @@ export const userController = {
       });
     } catch (error) {
       console.error("Error fetching notifications:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  saveSignalId: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(400).json({ message: "Missing user ID" });
+        return;
+      }
+      if (!req.body) {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
+      const { pushId } = req.body;
+      if (!pushId) {
+        res.status(400).json({ message: "Missing push ID" });
+        return;
+      }
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+      user.oneSignalPlayerId = pushId;
+      await user.save();
+      res.status(200).json({ message: "Signal ID saved successfully" });
+    } catch (error) {
+      console.error("Error saving signal ID:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   },
@@ -507,5 +574,54 @@ export const userController = {
       });
     }
   },
-};
 
+  verifyGender: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(400).json({ message: "Missing user ID" });
+        return;
+      }
+      const video = req.file;
+      if (!video) {
+        res.status(400).json({ message: "No video uploaded" });
+        return;
+      }
+
+      const base64Video = req.file.buffer.toString("base64");
+      const gender = await detectGenderWithGemini(base64Video);
+
+      console.log("Gender detected successfully", gender);
+
+      if (gender === "Unknown") {
+        res.status(400).json({ message: "Gender detection failed" });
+        return;
+      }
+      if (gender !== "Male" && gender !== "Female") {
+        res.status(400).json({ message: "Gender detection failed" });
+        return;
+      }
+      if (gender === "Female") {
+        res.status(400).json({
+          message:
+            "Unfortunately, Female users are not allowed to use this app",
+        });
+        return;
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      user.isProfileCompleted = true;
+      await user.save();
+
+      res.json({ message: "Gender detected successfully", data: gender });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: err.message });
+    }
+  },
+};

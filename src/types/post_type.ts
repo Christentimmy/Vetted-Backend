@@ -20,6 +20,7 @@ export interface IMediaItem {
 }
 
 export interface ITextContent {
+  title: string;
   text: string;
   formatting?: {
     alignment: "left" | "center" | "right";

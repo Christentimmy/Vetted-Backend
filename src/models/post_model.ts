@@ -42,6 +42,10 @@ const MediaItemSchema = new Schema<IMediaItem>(
 
 const TextContentSchema = new Schema<ITextContent>(
   {
+    title: {
+      type: String,
+      maxlength: 200,
+    },
     text: {
       type: String,
       maxlength: 5000,

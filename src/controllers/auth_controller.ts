@@ -15,11 +15,11 @@ import tokenBlacklistSchema from "../models/token_blacklist_model";
 const token_secret = config.jwt.secret;
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 if (!token_secret) {
-    throw new Error("TOKEN_SECRET is not defined in the environment variables.");
+  throw new Error("TOKEN_SECRET is not defined in the environment variables.");
 }
 interface DecodedToken extends JwtPayload {
-    id: string;
-    role: string;
+  id: string;
+  role: string;
 }
 
 export const authController = {
@@ -182,9 +182,7 @@ export const authController = {
 
       const googleUser = await verifyGoogleToken(token);
 
-      const user = await UserModel.findOne({ email: googleUser.email }).select(
-        "accountStatus"
-      );
+      const user = await UserModel.findOne({ email: googleUser.email });
 
       if (!user) {
         res.status(404).json({ message: "Invalid Credentials" });
@@ -197,11 +195,11 @@ export const authController = {
       }
 
       // Generate token
-      const jwtToken = await generateToken(user);
+      const jwtToken = generateToken(user);
 
       // Check if user profile is completed
       if (!user.isProfileCompleted) {
-        res.status(400).json({ message: "User Not Complete", token: jwtToken });
+        res.status(405).json({ message: "User Not Complete", token: jwtToken });
         return;
       }
 
@@ -337,6 +335,31 @@ export const authController = {
     } catch (error) {
       console.error("Error in validateToken controller:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  logoutUser: async (req: Request, res: Response) => {
+    try {
+      const token = req.headers.authorization?.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+
+      const decoded = jwt.verify(token, token_secret!) as JwtPayload;
+
+      // Optional: ensure token belongs to a valid user
+      const user = await UserModel.findById(decoded.id);
+      if (!user) {
+        res.status(401).json({ message: "Invalid token" });
+        return;
+      }
+
+      await tokenBlacklistSchema.create({ token, userId: user._id });
+
+      res.status(200).json({ message: "Logout successful" });
+    } catch (error) {
+      console.error("❌ Error in logout:", error);
+      res.status(500).json({ message: "Server error" });
     }
   },
 };

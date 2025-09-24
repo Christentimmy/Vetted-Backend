@@ -24,7 +24,7 @@ export async function statusChecker(
       return;
     }
 
-    if (!user?.isPhoneVerified) {
+    if (!user?.isPhoneVerified && user.phone !== undefined) {
       res.status(400).json({ message: "user phone is not verified" });
       return;
     }

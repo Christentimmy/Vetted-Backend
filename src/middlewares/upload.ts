@@ -69,6 +69,8 @@ const searchMedia = multer({
   limits: { fileSize: 150 * 1024 * 1024 },
 });
 
+const genderMedia = multer({ storage: multer.memoryStorage() });
+
 export const uploadToCloudinary = async (file: Express.Multer.File, folder: string) => {
   return new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
@@ -93,4 +95,4 @@ export const uploadImage = multer({
 });
 
 
-export { uploadProfile, uploadPostMedia, uploadMessageMedia, searchMedia };
+export { uploadProfile, uploadPostMedia, uploadMessageMedia, searchMedia, genderMedia };

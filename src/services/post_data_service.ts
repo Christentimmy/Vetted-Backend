@@ -41,7 +41,7 @@ export class PostDataService {
     return result;
   }
 
-  static async processContent(text: string, files: Express.Multer.File[]) {
+  static async processMedia(files: Express.Multer.File[]) {
     const mediaItems = files?.map(createMediaItemFromCloudinaryFile) || [];
 
     return {
@@ -145,7 +145,6 @@ export class PostDataService {
           createdAt: 1,
           updatedAt: 1,
           isDeleted: 1,
-          
           engagement: 1, // 👈 keep engagement object
           authorId: "$author", // 👈 alias back to authorId
         },

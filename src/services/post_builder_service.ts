@@ -6,6 +6,7 @@ import { Follow } from "../models/follow";
 // import SavedPost from "../models/saved_post_model";
 
 export class PostBuilderService {
+  
   static buildPostData(params: {
     user: IUser;
     processedPoll: IPoll | undefined;
@@ -15,6 +16,7 @@ export class PostBuilderService {
     const { user, processedPoll, mediaItems, requestBody } = params;
 
     const {
+      title,
       text,
       formatting,
       postType = "regular",
@@ -28,6 +30,7 @@ export class PostBuilderService {
 
       // Content
       content: {
+        title: title || "",
         text: text || "",
         formatting: {
           alignment: formatting?.alignment || "left",

@@ -30,6 +30,7 @@ router.use(statusChecker);
 router.patch("/toggle-follow", userController.toggleFollow);
 router.get("/get-notifications", userController.getNotification);
 router.patch("/mark-notification-as-read", userController.markNotificationAsRead);
+router.patch("/edit-profile", userController.editProfile);
 
 router.patch("/toggle-block", userController.toggleBlock);
 router.get("/get-blocked-users", userController.getBlockedUsers);

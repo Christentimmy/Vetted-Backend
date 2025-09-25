@@ -16,7 +16,6 @@ import { detectGenderWithGemini } from "../utils/gemini_helper";
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
 export const userController = {
-  
   userExist: async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
@@ -212,6 +211,37 @@ export const userController = {
     }
   },
 
+  editProfile: async (req: Request, res: Response) => {
+    try {
+      const { displayName, email, phone, location } = req.body;
+      const userId = res.locals.userId;
+      if (!userId) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+      const user = await User.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      if(displayName) user.displayName = displayName;
+      if(email) user.email = email;
+      if(phone) user.phone = phone;
+      // if(location){
+      //   user.location.address = location.address;
+      //   user.location.coordinates[0] = location.lng;
+      //   user.location.coordinates[1] = location.lat;
+      // }
+
+      await user.save();
+      res.status(200).json({ message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Edit profile error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
   toggleFollow: async (req: Request, res: Response) => {
     try {
       if (!req.body) {
@@ -332,9 +362,21 @@ export const userController = {
         createdAt: -1,
       });
 
+      const response = notifications.map((notification) => {
+        return {
+          userId: notification.userId,
+          _id: notification._id,
+          type: notification.type,
+          message: notification.message,
+          link: notification.link,
+          isRead: notification.isRead,
+          createdAt: notification.createdAt,
+        };
+      });
+
       res.status(200).json({
         message: "Notifications fetched successfully",
-        data: notifications,
+        data: response,
       });
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -477,7 +519,9 @@ export const userController = {
     try {
       const userId = res.locals.user._id;
 
-      const posts = await Post.find({ authorId: userId }).sort({
+      const posts = await Post.find({ authorId: userId })
+      .populate("authorId")
+      .sort({
         createdAt: -1,
       });
 

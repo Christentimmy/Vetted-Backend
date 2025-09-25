@@ -16,6 +16,8 @@ import supportTicketRoutes from "./routes/support_ticket_routes";
 import bodyParser from "body-parser";
 import cors from "cors";
 
+import "./jobs/subscription_job";
+
 import { handleWebhook } from "./services/stripe_service";
 
 const app: Express = express();

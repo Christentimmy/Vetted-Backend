@@ -214,6 +214,7 @@ const PostSchema = new Schema<IPost>(
     poll: PollSchema,
 
     personName: String,
+    personAge: String,
     personLocation: String,
 
     // Engagement and Interactions

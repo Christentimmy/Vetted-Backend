@@ -8,6 +8,7 @@ import {
   handleWebhook,
 } from "../services/stripe_service";
 import { PLANS } from "../config/subscription_plans";
+import Subscription from "../models/subscription_model";
 
 export const subscriptionController = {
   getPlans: async (req: Request, res: Response) => {
@@ -24,6 +25,20 @@ export const subscriptionController = {
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });
+      }
+
+      // Check for existing active subscription
+      const existingSubscription = await Subscription.findOne({
+        userId,
+        status: "active",
+        currentPeriodEnd: { $gt: new Date() },
+      });
+
+      if (existingSubscription) {
+        return res.status(400).json({
+          message: "You already have an active subscription",
+          subscription: existingSubscription,
+        });
       }
 
       const session = await createCheckoutSession(userId);
@@ -70,14 +85,15 @@ export const subscriptionController = {
       const userId = res.locals.userId;
 
       if (!userId) {
-         res.status(401).json({ success: false, error: "Unauthorized" });
-         return;
+        res.status(401).json({ success: false, error: "Unauthorized" });
+        return;
       }
 
       await cancelSubscription(userId);
 
       res.status(200).json({
-        message: "Subscription will be canceled at the end of the current period",
+        message:
+          "Subscription will be canceled at the end of the current period",
       });
     } catch (error: any) {
       console.error("Cancel subscription error:", error);
@@ -135,12 +151,15 @@ export const subscriptionController = {
   },
 
   success: async (req: Request, res: Response) => {
-    res.send("Payment Successful");
+    console.log("Payment successful");
+    const redirecUrl = "vetted://payment-success";
+    res.redirect(redirecUrl);
     return;
   },
 
   cancelled: async (req: Request, res: Response) => {
-    res.send("Payment Cancelled");
+    const redirecUrl = "vetted://payment-cancelled";
+    res.redirect(redirecUrl);
     return;
   },
 };

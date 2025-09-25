@@ -46,9 +46,15 @@ export const postController = {
       }
 
       if (postType === "woman") {
-        if (!req.body.personName || !req.body.personLocation) {
+        if (
+          !req.body.personName ||
+          !req.body.personLocation ||
+          !req.files ||
+          !req.body.personAge
+        ) {
           return res.status(400).json({
-            message: "Person name and location are required for woman posts",
+            message:
+              "Person name and location, pic are required for woman posts",
           });
         }
       }
@@ -81,12 +87,12 @@ export const postController = {
 
       res.status(201).json({ message: "Post created successfully" });
 
-      const postName = (text ?? "").toLowerCase(); // Use empty string if text is null/undefined
+      const postName = (newPost.personName ?? "").toLowerCase();
       const matchingAlerts = await Alert.find({
         name: postName,
         isActive: true,
-        userId: { $ne: newPost.authorId }, // Don't alert the post author
-      }).populate<{ userId: IUser }>("userId"); // Assuming you want to notify by email
+        userId: { $ne: newPost.authorId },
+      }).populate<{ userId: IUser }>("userId");
 
       // Send notifications for each matching alert
       for (const alert of matchingAlerts) {
@@ -235,25 +241,48 @@ export const postController = {
       if (!post) return res.status(404).json({ message: "Post not found" });
 
       // Check if user already voted
-      const existingVote = await Vote.findOne({ userId, postId });
+      let existingVote = await Vote.findOne({ userId, postId });
+
       if (existingVote) {
-        return res.status(409).json({ message: "You already voted" });
+        // If user already voted, update their vote
+        if (existingVote.color !== color) {
+          // Decrement old vote
+          if (existingVote.color === "red") {
+            post.engagement.redVotes = Math.max(
+              0,
+              post.engagement.redVotes - 1
+            );
+          } else {
+            post.engagement.greenVotes = Math.max(
+              0,
+              post.engagement.greenVotes - 1
+            );
+          }
+
+          // Increment new vote
+          if (color === "red") post.engagement.redVotes++;
+          else post.engagement.greenVotes++;
+
+          // Update vote record
+          existingVote.color = color;
+          await existingVote.save();
+        }
+      } else {
+        // First-time vote
+        await Vote.create({ userId, postId, color });
+
+        post.engagement.totalFlagVote++;
+        if (color === "red") post.engagement.redVotes++;
+        else post.engagement.greenVotes++;
       }
 
-      // Save vote in Vote collection
-      await Vote.create({ userId, postId, color });
-
-      // Update aggregated stats in Post
-      post.engagement.totalFlagVote++;
-      if (color === "red") post.engagement.redVotes++;
-      else post.engagement.greenVotes++;
-
+      // Recalculate leading flag
       post.engagement.leadingFlag =
         post.engagement.redVotes > post.engagement.greenVotes ? "red" : "green";
 
       await post.save();
 
-      res.status(200).json({ message: "Vote cast successfully" });
+      res.status(200).json({ message: "Vote recorded successfully" });
     } catch (error) {
       console.error("Error casting vote:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -770,13 +799,32 @@ export const postController = {
     try {
       const userId = res.locals.user._id;
 
-      const saved = await SavedPost.find({ userId })
-        .populate("postId", "content media")
+      const savedPosts = await SavedPost.find({ userId })
+        .populate({
+          path: "postId",
+          populate: {
+            path: "authorId",
+          },
+        })
         .sort({ createdAt: -1 });
+
+      // Format each saved post using the PostBuilderService
+      const formattedPosts = await Promise.all(
+        savedPosts.map(async (saved) => {
+          if (!saved.postId) return null;
+          return await PostBuilderService.formatPostResponse(
+            saved.postId,
+            userId.toString()
+          );
+        })
+      );
+
+      // Filter out any null posts (in case a post was deleted but the reference remains)
+      const validPosts = formattedPosts.filter((post) => post !== null);
 
       res.status(200).json({
         message: "Saved posts fetched successfully",
-        data: saved,
+        data: validPosts,
       });
     } catch (error) {
       console.error("Error fetching saved posts:", error);

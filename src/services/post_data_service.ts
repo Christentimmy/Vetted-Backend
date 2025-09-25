@@ -140,6 +140,7 @@ export class PostDataService {
           postType: 1,
           media: 1,
           personName: 1,
+          personAge: 1,
           personLocation: 1,
           poll: 1,
           createdAt: 1,

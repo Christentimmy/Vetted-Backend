@@ -80,6 +80,7 @@ export interface IPost extends Document {
   poll?: IPoll;
 
   personName: string;
+  personAge: string;
   personLocation: string;
 
   // Engagement and Interactions

@@ -10,6 +10,7 @@ import {
   getSexOffendersByName,
 } from "../services/crimeometer_service";
 import { logSearch } from "../services/search_logger";
+import { zenserpReverseImage } from "../services/zenserpReverseImage";
 
 export const appServiceController = {
   getNumberInfo: async (req: Request, res: Response) => {
@@ -165,6 +166,19 @@ export const appServiceController = {
       res.json({ success: true, data: result });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });
+    }
+  },
+
+  googleImageSearch: async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Image is required" });
+      }
+      const result = await zenserpReverseImage(req.file.path);
+      res.json({ message: "Success", data: result });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" }); 
     }
   },
 };

@@ -63,8 +63,8 @@ export const authController = {
 
       if (!user.isPhoneVerified) {
         res
-          .status(400)
-          .json({ message: "Phone Not Verified", token: jwtToken });
+          .status(405)
+          .json({ message: "Phone Not Verified", token: jwtToken, phone });
         return;
       }
 

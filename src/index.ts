@@ -25,7 +25,7 @@ const port = config.port;
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://vetted-admin.onrender.com"], // Add another origin here
     credentials: true,
   })
 );

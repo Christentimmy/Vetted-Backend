@@ -24,10 +24,10 @@ export async function statusChecker(
       return;
     }
 
-    if (!user?.isPhoneVerified && user.phone !== undefined) {
-      res.status(400).json({ message: "user phone is not verified" });
-      return;
-    }
+    // if (!user?.isPhoneVerified && user.phone !== undefined) {
+    //   res.status(400).json({ message: "user phone is not verified" });
+    //   return;
+    // }
 
     if (!user.isProfileCompleted) {
       res.status(400).json({ message: "User profile is not completed" });

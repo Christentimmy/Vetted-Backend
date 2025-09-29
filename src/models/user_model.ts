@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema<IUser>(
     phone: {
       type: String,
       sparse: true,
+      default: "",
       index: {
         unique: true,
         partialFilterExpression: { phone: { $type: "string" } },

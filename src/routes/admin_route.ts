@@ -28,6 +28,9 @@ router.post("/toggle-active", adminController.toggleActive);
 router.post("/delete-admin", adminController.deleteAdmin);
 router.post("/mark-ticket", supportTicketController.markAsResolved);
 
+router.get("/all-gender-verifications", adminController.getAllPendingVerification);
+router.post("/reject-gender-verification", adminController.rejectGenderVerification);
+router.post("/accept-gender-verification", adminController.acceptGenderVerification);
 
 router.use(superAdminStatusChecker);
 router.post("/create-admin", adminController.createAdmin);

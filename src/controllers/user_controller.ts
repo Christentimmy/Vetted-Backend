@@ -10,9 +10,8 @@ import { Block } from "../models/block_model";
 import { IUser } from "../types/user_type";
 import { PostBuilderService } from "../services/post_builder_service";
 import Alert from "../models/alert_model";
-import Subscription from "../models/subscription_model";
 import { detectGenderWithGemini } from "../utils/gemini_helper";
-import { detectGenderWithChatGPT } from "../services/openai_service";
+import GenderApplicationModel from "../models/gender_model_application";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -226,9 +225,9 @@ export const userController = {
         return;
       }
 
-      if(displayName) user.displayName = displayName;
-      if(email) user.email = email;
-      if(phone) user.phone = phone;
+      if (displayName) user.displayName = displayName;
+      if (email) user.email = email;
+      if (phone) user.phone = phone;
       // if(location){
       //   user.location.address = location.address;
       //   user.location.coordinates[0] = location.lng;
@@ -306,15 +305,25 @@ export const userController = {
         "phone accountStatus isPhoneVerified isProfileCompleted displayName dateOfBirth relationshipStatus location"
       );
 
+      const genderVerification = await GenderApplicationModel.findOne({
+        applicant: userId,
+      });
+
       if (!user) {
         res.status(404).json({ message: "User not found" });
         return;
       }
 
-      res.status(200).json({
+      let response: any = {
         message: "User status retrieved",
         data: user,
-      });
+      };
+
+      if (genderVerification) {
+        response.vStatus = genderVerification.status;
+      }
+
+      res.status(200).json(response);
     } catch (error) {
       console.error("Error retrieving user status:", error);
       res.status(500).json({ message: "Internal Server Error" });
@@ -521,10 +530,10 @@ export const userController = {
       const userId = res.locals.user._id;
 
       const posts = await Post.find({ authorId: userId })
-      .populate("authorId")
-      .sort({
-        createdAt: -1,
-      });
+        .populate("authorId")
+        .sort({
+          createdAt: -1,
+        });
 
       const formattedPosts = await Promise.all(
         posts.map((post) =>
@@ -627,48 +636,33 @@ export const userController = {
         res.status(400).json({ message: "Missing user ID" });
         return;
       }
-      const video = req.file;
+      const video = req.file.path;
       if (!video) {
         res.status(400).json({ message: "No video uploaded" });
         return;
       }
 
-      const base64Video = req.file.buffer.toString("base64");
-      const gender = await detectGenderWithGemini(base64Video);
-      //const gender = await detectGenderWithChatGPT(base64Video);
+      const existingApplication = await GenderApplicationModel.findOne({
+        applicant: userId,
+        status: "pending",
+      });
 
-      console.log("Gender detected successfully", gender);
-
-      if (gender === "Unknown") {
-        res.status(400).json({ message: "Gender detection failed" });
-        return;
-      }
-      if (gender !== "Male" && gender !== "Female") {
-        res.status(400).json({ message: "Gender detection failed" });
-        return;
-      }
-      if (gender === "Female") {
-        res.status(400).json({
-          message:
-            "Unfortunately, Female users are not allowed to use this app",
-        });
-        return;
+      if (existingApplication) {
+        return res.status(400).json({ message: "You have already applied" });
       }
 
-      const user = await User.findById(userId);
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
+      const genderApplication = new GenderApplicationModel({
+        applicant: userId,
+        attachment: video,
+        status: "pending",
+      });
 
-      user.isProfileCompleted = true;
-      await user.save();
+      await genderApplication.save();
 
-      res.json({ message: "Gender detected successfully", data: gender });
+      res.json({ message: "Gender Application successfully" });
     } catch (err) {
       console.log(err);
       res.status(500).json({ error: err.message });
     }
   },
-
 };

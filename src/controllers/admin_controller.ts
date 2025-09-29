@@ -12,6 +12,9 @@ import {
 import subscriptionModel from "../models/subscription_model";
 import { IUser } from "../types/user_type";
 import { getUserStripeInvoiceHistory } from "../services/stripe_service";
+import GenderApplicationModel from "../models/gender_model_application";
+import { sendPushNotification } from "../config/onesignal";
+import { NotificationType } from "../config/onesignal";
 
 export const adminController = {
   //Auth
@@ -44,7 +47,6 @@ export const adminController = {
         data: user,
         token: jwtToken,
       });
-
     } catch (error) {
       console.error("Error creating admin:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -97,7 +99,6 @@ export const adminController = {
 
   getAllAdmins: async (req: Request, res: Response) => {
     try {
-
       const admins = await UserModel.find({
         role: { $ne: "user" },
         isDeleted: false,
@@ -484,6 +485,97 @@ export const adminController = {
       res.json({ message: "Post deleted successfully" });
     } catch (error) {
       console.log("Error deleting post", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  //Gender verification
+  getAllPendingVerification: async (req: Request, res: Response) => {
+    try {
+      const verifications = await GenderApplicationModel.find().populate<{ applicant: IUser }>("applicant");
+
+      const response = verifications.map((verification) => {
+        return {
+          id: verification._id,
+          user: {
+            _id: verification.applicant._id,
+            displayName: verification.applicant.displayName,
+            email: verification.applicant.email,
+          },
+          media: verification.attachment,
+          status: verification.status,
+          createdAt: verification.createdAt,
+          updatedAt: verification.updatedAt,
+        };
+      });
+
+      res.json({ message: "Success", data: response });
+    } catch (error) {
+      console.error("Error fetching pending verifications:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  acceptGenderVerification: async (req: Request, res: Response) => {
+    try {
+      const { id, userId } = req.body;
+      if (!id) {
+        res.status(400).json({ message: "Verification Id is required" });
+        return;
+      }
+      await GenderApplicationModel.findByIdAndUpdate(
+        { _id: id },
+        { status: "accepted" }
+      );
+
+      const user = await UserModel.findByIdAndUpdate(
+        { _id: userId },
+        { isProfileCompleted: true }
+      );
+
+      if (user.oneSignalPlayerId) {
+        await sendPushNotification(
+          user.id,
+          user.oneSignalPlayerId,
+          NotificationType.SYSTEM,
+          "Your gender application has been approved"
+        );
+      }
+
+      res.json({ message: "Verification accepted successfully" });
+    } catch (error) {
+      console.error("Error accepting verification:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  rejectGenderVerification: async (req: Request, res: Response) => {
+    try {
+      const { id, userId } = req.body;
+      if (!id || !userId) {
+        res.status(400).json({ message: "Verification Id and User Id are required" });
+        return;
+      }
+
+      await GenderApplicationModel.findByIdAndDelete(id);
+
+      const user = await UserModel.findByIdAndUpdate(
+        { _id: userId },
+        { isProfileCompleted: false }
+      );
+
+      if (user.oneSignalPlayerId) {
+        await sendPushNotification(
+          user.id,
+          user.oneSignalPlayerId,
+          NotificationType.SYSTEM,
+          "Your gender application has been rejected"
+        );
+      }
+
+      res.json({ message: "Verification rejected successfully" });
+    } catch (error) {
+      console.error("Error rejecting verification:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   },

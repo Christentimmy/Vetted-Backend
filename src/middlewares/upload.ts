@@ -69,29 +69,45 @@ const searchMedia = multer({
   limits: { fileSize: 150 * 1024 * 1024 },
 });
 
-const genderMedia = multer({ storage: multer.memoryStorage() });
+const genderMediaStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "gender_media",
+      resource_type: "auto",
+      public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
+    };
+  },
+});
 
-export const uploadToCloudinary = async (file: Express.Multer.File, folder: string) => {
+const genderMedia = multer({ storage: genderMediaStorage });
+
+export const uploadToCloudinary = async (
+  file: Express.Multer.File,
+  folder: string
+) => {
   return new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-          {
-              folder: folder,
-              format: "png",
-              public_id: file.originalname.split('.')[0],
-          },
-          (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-          }
-      ).end(file.buffer);
+    cloudinary.uploader
+      .upload_stream(
+        {
+          folder: folder,
+          format: "png",
+          public_id: file.originalname.split(".")[0],
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      )
+      .end(file.buffer);
   });
 };
 
 const storage = multer.memoryStorage();
 
 export const uploadImage = multer({
-    storage,
-    limits: { fileSize: 3 * 1024 * 1024 },
+  storage,
+  limits: { fileSize: 3 * 1024 * 1024 },
 });
 
 const supportTicketStorage = new CloudinaryStorage({
@@ -104,8 +120,12 @@ const supportTicketStorage = new CloudinaryStorage({
   },
 });
 
-
 export const supportUpload = multer({ storage: supportTicketStorage });
 
-
-export { uploadProfile, uploadPostMedia, uploadMessageMedia, searchMedia, genderMedia };
+export {
+  uploadProfile,
+  uploadPostMedia,
+  uploadMessageMedia,
+  searchMedia,
+  genderMedia,
+};

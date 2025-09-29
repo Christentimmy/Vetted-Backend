@@ -23,7 +23,7 @@ router.patch("/selfie-verified", userController.profileVerified);
 router.get("/get-user-status", userController.getUserStatus);
 router.get("/get-user-details", userController.getUserDetails);
 router.post("/save-signal-id", userController.saveSignalId);
-router.post("/verify-gender", genderMedia.single("video"), userController.verifyGender);
+router.post("/verify-gender", genderMedia.single("media"), userController.verifyGender);
 
 router.use(statusChecker);
 

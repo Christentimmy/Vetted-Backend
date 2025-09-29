@@ -710,8 +710,7 @@ export const postController = {
 
       poll.options[optionIndex].voteCount++;
       poll.totalVotes++;
-      poll.hasVoted = true;
-      poll.selectedOptionId = optionId;
+
       await post.save();
 
       await session.commitTransaction();

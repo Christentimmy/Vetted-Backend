@@ -2,11 +2,17 @@ import express from "express";
 import { supportTicketController } from "../controllers/support_ticket_controller";
 import tokenValidationMiddleware from "../middlewares/token_validator";
 import {statusChecker} from "../middlewares/status_middleware";
-import { uploadImage } from "../middlewares/upload";
+import { supportUpload } from "../middlewares/upload";
 import roleMiddleware from "../middlewares/role_middleware";
 
 const router = express.Router();
 router.use(tokenValidationMiddleware);
+
+
+// User routes
+router.post("/create-ticket", supportUpload.array('attachments', 5), supportTicketController.createTicket);
+router.get("/my-tickets", supportTicketController.getUserTickets);
+
 
 router.use(roleMiddleware("admin"));
 router.get("/all-tickets", supportTicketController.getAllTickets);
@@ -16,9 +22,6 @@ router.get("/:ticketId", supportTicketController.getTicket);
 router.use(statusChecker);
 
 
-// User routes
-router.post("/create-ticket", uploadImage.array('attachments', 5), supportTicketController.createTicket);
-router.get("/my-tickets", supportTicketController.getUserTickets);
 
 // Admin routes
 

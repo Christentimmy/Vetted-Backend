@@ -33,7 +33,6 @@ export interface IPollOption {
   id: string;
   text: string;
   voteCount: number;
-  // voters: Types.ObjectId[]; // User IDs who voted for this option
 }
 
 export interface IPoll {
@@ -43,8 +42,6 @@ export interface IPoll {
   expiresAt?: Date;
   totalVotes: number;
   isActive: boolean;
-  hasVoted?: boolean;
-  selectedOptionId?: string;
 }
 
 

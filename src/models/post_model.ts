@@ -106,14 +106,6 @@ const PollSchema = new Schema<IPoll>(
       type: Boolean,
       default: true,
     },
-    hasVoted: {
-      type: Boolean,
-      default: false,
-    },
-    selectedOptionId: {
-      type: String,
-      default: "",
-    },
   },
   { _id: false }
 );

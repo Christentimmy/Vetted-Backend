@@ -9,33 +9,32 @@ export const supportTicketController = {
   createTicket: async (req: Request, res: Response) => {
     try {
       const userId = res.locals.userId;
-      const { subject, description, category, priority } = req.body;
-      const files = req.files as Express.Multer.File[];
+      const { subject, description } = req.body;
 
-      if (!subject || !description || !category) {
-        res
-          .status(400)
-          .json({ message: "Subject, description, and category are required" });
+      const files = req.files as Express.Multer.File[];
+      if (!files) {
+        res.status(400).json({ message: "Attachments are required" });
         return;
       }
 
-      // Upload files to Cloudinary if any
-      let attachments: string[] = [];
-      if (files && files.length > 0) {
-        const uploadPromises = files.map((file) =>
-          uploadToCloudinary(file, "support-tickets")
-        );
+      if (!subject || !description ) {
+        res
+          .status(400)
+          .json({ message: "Subject, description, required" });
+        return;
+      }
 
-        const uploadResults = await Promise.all(uploadPromises);
-        attachments = uploadResults.map((result: any) => result.secure_url);
+      let attachments: string[] = [];
+      for (const file of files) {
+        attachments.push(file.path);
       }
 
       const ticket = new SupportTicket({
         user: userId,
         subject,
         description,
-        category: category.toLowerCase(),
-        priority: priority || "medium",
+        category: "technical",
+        priority: "medium",
         attachments,
         createdAt: new Date(),
       });
@@ -53,8 +52,7 @@ export const supportTicketController = {
         const message = `
                     New support ticket created by ${user.displayName} (${user.email})<br>
                     Subject: ${subject}<br>
-                    Category: ${category}<br>
-                    Priority: ${priority || "medium"}<br>
+                    Category: ${"Technical"}<br>
                     Description: ${description}<br><br>
                     ${attachments.length > 0 ? `\nAttachments: ${attachments.join("\n")}` : ""}
                 `;

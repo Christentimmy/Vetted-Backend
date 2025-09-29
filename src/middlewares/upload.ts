@@ -94,5 +94,18 @@ export const uploadImage = multer({
     limits: { fileSize: 3 * 1024 * 1024 },
 });
 
+const supportTicketStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: "user_verification",
+      public_id: `${Date.now()}-${file.originalname}`,
+    };
+  },
+});
+
+
+export const supportUpload = multer({ storage: supportTicketStorage });
+
 
 export { uploadProfile, uploadPostMedia, uploadMessageMedia, searchMedia, genderMedia };

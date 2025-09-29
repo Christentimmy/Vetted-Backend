@@ -12,6 +12,7 @@ import { PostBuilderService } from "../services/post_builder_service";
 import Alert from "../models/alert_model";
 import Subscription from "../models/subscription_model";
 import { detectGenderWithGemini } from "../utils/gemini_helper";
+import { detectGenderWithChatGPT } from "../services/openai_service";
 
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
 
@@ -634,6 +635,7 @@ export const userController = {
 
       const base64Video = req.file.buffer.toString("base64");
       const gender = await detectGenderWithGemini(base64Video);
+      //const gender = await detectGenderWithChatGPT(base64Video);
 
       console.log("Gender detected successfully", gender);
 
@@ -668,4 +670,5 @@ export const userController = {
       res.status(500).json({ error: err.message });
     }
   },
+
 };

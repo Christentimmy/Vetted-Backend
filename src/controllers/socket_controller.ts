@@ -11,6 +11,7 @@ import { NotificationType } from "../config/onesignal";
 dotenv.config();
 
 export const socketController = {
+
   sendMessage: async (
     io: Server,
     socket: Socket,

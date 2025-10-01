@@ -178,7 +178,17 @@ export const postController = {
   getFeed: async (req: Request, res: Response) => {
     try {
       const user = res.locals.user;
-      const { type = "woman", page = 1, limit = 20 } = req.query;
+      let {
+        type = "woman",
+        page = 1,
+        limit = 20,
+        personName,
+        ageRange,
+        personLocation,
+        sort,
+        onlyGreen,
+        onlyRed,
+      } = req.query;
 
       if (!user) {
         return res.status(401).json({ message: "Authentication required" });
@@ -190,11 +200,67 @@ export const postController = {
       const pageNum = parseInt(page as string) || 1;
       const limitNum = parseInt(limit as string) || 20;
 
+      // Parse filters
+      const nameFilter =
+        typeof personName === "string" && personName.trim().length > 0
+          ? personName.trim()
+          : undefined;
+
+      let ageRangeFilter: [number, number] | undefined;
+      if (Array.isArray(ageRange)) {
+        const nums = ageRange
+          .map((v) => parseInt(String(v)))
+          .filter((n) => !isNaN(n));
+        if (nums.length >= 2)
+          ageRangeFilter = [
+            Math.min(nums[0], nums[1]),
+            Math.max(nums[0], nums[1]),
+          ];
+      } else if (typeof ageRange === "string" && ageRange.trim().length) {
+        try {
+          // Accept formats like "[10,40]" or "10,40"
+          const parsed = ageRange.trim().startsWith("[")
+            ? JSON.parse(ageRange)
+            : ageRange.split(",").map((s) => s.trim());
+          const a = parseInt(String(parsed[0]));
+          const b = parseInt(String(parsed[1]));
+          if (!isNaN(a) && !isNaN(b)) {
+            ageRangeFilter = [Math.min(a, b), Math.max(a, b)];
+          }
+        } catch {}
+      }
+
+      const locationFilter =
+        typeof personLocation === "string" && personLocation.trim().length > 0
+          ? personLocation.trim()
+          : undefined;
+
+      const sortValue: "newest" | "oldest" =
+        sort === "oldest" ? "oldest" : "newest";
+
+      const onlyGreenBool =
+        typeof onlyGreen !== "undefined" &&
+        String(onlyGreen).toLowerCase() === "true";
+      const onlyRedBool =
+        typeof onlyRed !== "undefined" &&
+        String(onlyRed).toLowerCase() === "true";
+
+      let leadingFlag: "green" | "red" | undefined = undefined;
+      if (onlyGreenBool && !onlyRedBool) leadingFlag = "green";
+      if (onlyRedBool && !onlyGreenBool) leadingFlag = "red";
+
       const feedData = await PostDataService.getFeed(
         user,
         pageNum,
         limitNum,
-        type
+        type,
+        {
+          personName: nameFilter,
+          ageRange: ageRangeFilter,
+          personLocation: locationFilter,
+          sort: sortValue,
+          leadingFlag,
+        }
       );
 
       if (!feedData) {

@@ -53,7 +53,14 @@ export class PostDataService {
     user: IUser,
     page: number = 1,
     limit: number = 20,
-    type: string
+    type: string,
+    filters?: {
+      personName?: string;
+      ageRange?: [number, number];
+      personLocation?: string;
+      sort?: "newest" | "oldest";
+      leadingFlag?: "green" | "red";
+    }
   ) {
     const skip = (page - 1) * limit;
 
@@ -64,8 +71,11 @@ export class PostDataService {
       postType: type,
     };
 
+    // Determine sort order
+    const sortStage = { createdAt: filters?.sort === "oldest" ? 1 : -1 } as const;
+
     // Aggregation pipeline
-    const results = await Post.aggregate([
+    const pipeline: any[] = [
       { $match: matchStage },
 
       //lookup-to-check-if-post-author-is-blocked-by-user
@@ -133,6 +143,60 @@ export class PostDataService {
       },
       { $unwind: "$author" },
 
+      // Optional filters
+      // personName (case-insensitive contains)
+      ...(type === "woman" && filters?.personName
+        ? [
+            {
+              $match: {
+                personName: {
+                  $regex: new RegExp(filters.personName, "i"),
+                },
+              },
+            },
+          ]
+        : []),
+
+      // personLocation (case-insensitive contains)
+      ...(type === "woman" && filters?.personLocation
+        ? [
+            {
+              $match: {
+                personLocation: {
+                  $regex: new RegExp(filters.personLocation, "i"),
+                },
+              },
+            },
+          ]
+        : []),
+
+      // Age range filter - safely convert string age to int
+      ...(type === "woman" && filters?.ageRange
+        ? [
+            {
+              $addFields: {
+                _ageNum: {
+                  $convert: { input: "$personAge", to: "int", onError: null, onNull: null },
+                },
+              },
+            },
+            {
+              $match: {
+                _ageNum: { $ne: null, $gte: filters.ageRange[0], $lte: filters.ageRange[1] },
+              },
+            },
+          ]
+        : []),
+
+      // Leading flag filter
+      ...(type === "woman" && filters?.leadingFlag
+        ? [
+            {
+              $match: { "engagement.leadingFlag": filters.leadingFlag },
+            },
+          ]
+        : []),
+
       // Clean projection - we need to use inclusion only (can't mix with exclusion)
       {
         $project: {
@@ -154,15 +218,13 @@ export class PostDataService {
       // Sorting, skipping, limiting + count
       {
         $facet: {
-          posts: [
-            { $sort: { createdAt: -1 } },
-            { $skip: skip },
-            { $limit: limit },
-          ],
+          posts: [{ $sort: sortStage }, { $skip: skip }, { $limit: limit }],
           totalCount: [{ $count: "count" }],
         },
       },
-    ]);
+    ];
+
+    const results = await Post.aggregate(pipeline);
 
     const posts = results[0].posts;
     const total = results[0].totalCount[0]?.count || 0;

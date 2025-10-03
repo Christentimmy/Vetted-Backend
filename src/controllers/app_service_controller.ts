@@ -11,14 +11,14 @@ import {
 } from "../services/crimeometer_service";
 import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
+import { fetchOffenders } from "../services/offender_service";
 
-
-import EnformionService from '../services/enformion';
+import EnformionService from "../services/enformion";
 
 // Initialize Enformion Service
 const enformionService = new EnformionService({
-  apName: process.env.ENFORMION_AP_NAME || '',
-  apPassword: process.env.ENFORMION_AP_PASSWORD || '',
+  apName: process.env.ENFORMION_AP_NAME || "",
+  apPassword: process.env.ENFORMION_AP_PASSWORD || "",
 });
 
 export const appServiceController = {
@@ -187,7 +187,28 @@ export const appServiceController = {
       res.json({ message: "Success", data: result });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: "Internal server error" }); 
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getOffendersMap: async (req: Request, res: Response) => {
+    try {
+      const { lat, lon, radius } = req.query;
+
+      if (!lat || !lon) {
+        return res.status(400).json({ error: "lat and lon are required" });
+      }
+
+      const data = await fetchOffenders(
+        Number(lat),
+        Number(lon),
+        Number(radius) || 10
+      );
+
+      res.json(data);
+    } catch (error: any) {
+      console.error(error.message);
+      res.status(500).json({ error: "Failed to fetch offenders" });
     }
   },
 };

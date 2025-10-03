@@ -10,6 +10,9 @@ const router = express.Router();
 router.use(tokenValidationMiddleware);
 router.use(statusChecker);
 
+
+router.get("/offenders", appServiceController.getOffendersMap);
+
 router.get("/get-number-info", appServiceController.getNumberInfo);
 router.post("/reverse-image", searchMedia.single("file"), appServiceController.reverseImage);
 router.post("/google-image-search", searchMedia.single("file"), appServiceController.googleImageSearch);

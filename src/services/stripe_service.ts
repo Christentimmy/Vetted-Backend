@@ -44,7 +44,7 @@ export const createCheckoutSession = async (userId: string) => {
     payment_method_types: ["card"],
     line_items: [
       {
-        price: "price_1S9eCPCEHhMF7pKAM7I7yc18",
+        price: "price_1SE8E3CEHhMF7pKAyr0meQ20",
         quantity: 1,
       },
     ],
@@ -142,8 +142,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  console.log("Event", event.type);
-
   // Use a transaction to ensure data consistency
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -195,6 +193,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   const userId = session.metadata?.userId;
   if (!userId) return;
+  console.log("The user is seen successfully", userId);
 
   // Get the subscription
   const subscription = await stripe.subscriptions.retrieve(
@@ -211,6 +210,7 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   const user = await User.findOne({ stripeCustomerId: customerId });
   if (!user) return;
 
+
   const plan = Object.values(PLANS).find(
     (p) => p.stripePriceId === data.price.id
   );
@@ -226,6 +226,8 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
       },
     ],
   });
+
+
 
   // Prepare subscription data
   const subscriptionData = {
@@ -263,8 +265,10 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
         }
       );
     }
+
+
     // Update the existing subscription
-    await Subscription.updateOne(
+   await Subscription.updateOne(
       { _id: subscriptionRecord._id },
       { $set: subscriptionData }
     );
@@ -275,7 +279,7 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   }
 
   // Update user's subscription info
-  await User.updateOne(
+ const userr = await User.updateOne(
     { _id: user._id },
     {
       $set: {

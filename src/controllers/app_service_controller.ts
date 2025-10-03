@@ -12,6 +12,15 @@ import {
 import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
 
+
+import EnformionService from '../services/enformion';
+
+// Initialize Enformion Service
+const enformionService = new EnformionService({
+  apName: process.env.ENFORMION_AP_NAME || '',
+  apPassword: process.env.ENFORMION_AP_PASSWORD || '',
+});
+
 export const appServiceController = {
   getNumberInfo: async (req: Request, res: Response) => {
     try {

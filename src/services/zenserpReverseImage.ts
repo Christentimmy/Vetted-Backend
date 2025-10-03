@@ -15,8 +15,8 @@ export async function zenserpReverseImage(imageUrl: string) {
   const params = {
     apikey: apiKey,
     image_url: imageUrl,
-    tbm: 'isch',   // Google Images vertical
-    num: 20        // number of results
+    tbm: 'isch',
+    num: 5
   };
 
   try {

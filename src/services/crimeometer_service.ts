@@ -16,10 +16,14 @@ export const getSexOffendersNearby = async (
   const url = `${BASE_URL}/sex-offenders/location`;
   const cacheKey = `offenders:${lat}:${lng}:${radius}`;
 
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    const cachedStr = cached.toString("utf8");
-    return JSON.parse(cachedStr);
+  try {
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      const cachedStr = cached.toString("utf8");
+      return JSON.parse(cachedStr);
+    }
+  } catch (cacheReadErr) {
+    console.warn("⚠️ Redis read failed:", cacheReadErr.message);
   }
 
   try {
@@ -36,7 +40,12 @@ export const getSexOffendersNearby = async (
       },
     });
 
-    await redisClient.set(cacheKey, JSON.stringify(data),{ EX: 240 });
+    try {
+      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 240 });
+    } catch (cacheWriteErr) {
+      console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+    }
+
     return data || [];
   } catch (error) {
     console.error(
@@ -51,10 +60,14 @@ export const getSexOffendersByName = async (name: string) => {
   const url = `${BASE_URL}/sex-offenders/records?name=${name}`;
   const cacheKey = `offender:${name}`;
 
-  const cached = await redisClient.get(cacheKey);
-  if (cached) {
-    const cachedStr = cached.toString("utf8");
-    return JSON.parse(cachedStr);
+  try {
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      const cachedStr = cached.toString("utf8");
+      return JSON.parse(cachedStr);
+    }
+  } catch (cacheReadErr) {
+    console.warn("⚠️ Redis read failed:", cacheReadErr.message);
   }
 
   try {
@@ -65,7 +78,12 @@ export const getSexOffendersByName = async (name: string) => {
       },
     });
 
-    await redisClient.set(cacheKey, JSON.stringify(data),{ EX: 240 });
+    try {
+      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 240 });
+    } catch (cacheWriteErr) {
+      console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+    }
+
     return data || [];
   } catch (error) {
     console.error(

@@ -77,10 +77,15 @@ class EnformionService {
   ): Promise<EnformionResponse<ReversePhoneSearchResponse[]>> {
     try {
       const cacheKey = `ReversePhoneSearch:${params.Phone}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        const cachedStr = cached.toString("utf8");
-        return JSON.parse(cachedStr);
+
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          const cachedStr = cached.toString("utf8");
+          return JSON.parse(cachedStr);
+        }
+      } catch (cacheReadErr) {
+        console.warn("⚠️ Redis read failed:", cacheReadErr.message);
       }
 
       const res = await this.axiosInstance.post("/ReversePhoneSearch", params, {
@@ -91,7 +96,11 @@ class EnformionService {
         data: res.data,
       };
 
-      await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+      } catch (cacheWriteErr) {
+        console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+      }
 
       return response as EnformionResponse<ReversePhoneSearchResponse[]>;
     } catch (error) {
@@ -108,11 +117,15 @@ class EnformionService {
   ): Promise<EnformionResponse<CallerIdResponse>> {
     try {
       const cacheKey = `Phone/Enrich:${params.Phone}`;
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        const cachedStr = cached.toString("utf8");
-        const parsed = JSON.parse(cachedStr);
-        return parsed;
+
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached.toString());
+          return parsed;
+        }
+      } catch (cacheReadErr) {
+        console.warn("⚠️ Redis read failed:", cacheReadErr.message);
       }
 
       const res = await this.axiosInstance.post("/Phone/Enrich", params, {
@@ -124,7 +137,11 @@ class EnformionService {
         data: res.data,
       };
 
-      await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+      } catch (cacheWriteErr) {
+        console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+      }
 
       return response as EnformionResponse<CallerIdResponse>;
     } catch (error) {

@@ -78,10 +78,10 @@ class EnformionService {
     try {
       const cacheKey = `ReversePhoneSearch:${params.Phone}`;
       const cached = await redisClient.get(cacheKey);
-      // if (cached) {
-      //   const cachedStr = cached.toString("utf8");
-      //   return JSON.parse(cachedStr);
-      // }
+      if (cached) {
+        const cachedStr = cached.toString("utf8");
+        return JSON.parse(cachedStr);
+      }
 
       const res = await this.axiosInstance.post("/ReversePhoneSearch", params, {
         headers: this.buildHeaders("ReversePhone"),
@@ -191,15 +191,17 @@ class EnformionService {
         "/CriminalSearch/V2",
         params,
         {
-          headers: this.buildHeaders("DevAPICriminalSearch"),
+          headers: this.buildHeaders("CriminalV2"),
         }
       );
+      console.log("Response", response);
 
       return {
         success: true,
         data: response.data,
       };
     } catch (error) {
+      console.log("Error", error);
       return this.handleError(error);
     }
   }

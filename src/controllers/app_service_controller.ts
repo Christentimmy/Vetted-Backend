@@ -1,14 +1,9 @@
 import { Request, Response } from "express";
 import { reverseImageSearch } from "../services/reverse_image_service";
 import { getNumberDetails } from "../services/twilio_service";
-import {
-  searchByPhoneNumber,
-  searchByName,
-} from "../services/whitepages_service";
-import {
-  getSexOffendersNearby,
-  getSexOffendersByName,
-} from "../services/crimeometer_service";
+import { searchByPhoneNumber, searchByName, } from "../services/whitepages_service";
+
+import { getSexOffendersNearby, getSexOffendersByName} from "../services/crimeometer_service";
 import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
 import { CallerIdResponse } from "../types/enformion_type";
@@ -103,6 +98,82 @@ export const appServiceController = {
         return res.status(404).json({ message: "Number not found" });
       }
       console.error(err);
+      res.status(500).json({ message: "Lookup failed" });
+    }
+  },
+
+  enformionBackgroundSearch: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "Invalid Request" });
+        return;
+      }
+      const {
+        firstName,
+        middleName,
+        lastName,
+        phoneNumber,
+        street,
+        city,
+        state_code,
+        zipcode,
+      } = req.body;
+      if (!firstName || !lastName) {
+        res.status(400).json({ message: "Name is required" });
+        return;
+      }
+
+      const info = await enformionService.personSearch({
+        FirstName: firstName,
+        MiddleName: middleName,
+        LastName: lastName,
+        Addresses: [
+          {
+            AddressLine1: street,
+            AddressLine2: city,
+            City: city,
+            State: state_code,
+            Zip: zipcode,
+          },
+        ],
+        Phone: phoneNumber,
+        Page: 1,
+        ResultsPerPage: 2,
+      });
+
+      res.status(200).json({ message: "Success", data: info });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Lookup failed" });
+    }
+  },
+
+  enformionCrimeRecord: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "Invalid Request" });
+        return;
+      }
+      const { firstName, middleName, lastName } = req.body;
+      if (!firstName || !lastName) {
+        res.status(400).json({ message: "Name is required" });
+        return;
+      }
+
+      const info = await enformionService.criminalSearch({
+        FirstName: firstName,
+        MiddleName: middleName,
+        LastName: lastName,
+        Page: 1,
+        ResultsPerPage: 2,
+      });
+      if (!info.success) {
+        return res.status(404).json({ message: "No data found" });
+      }
+
+      res.status(200).json({ message: "Success", data: info["data"] });
+    } catch (error) {
+      console.error(error);
       res.status(500).json({ message: "Lookup failed" });
     }
   },

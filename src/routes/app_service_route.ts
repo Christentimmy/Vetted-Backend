@@ -21,5 +21,7 @@ router.post("/name-lookup", appServiceController.nameLookup);
 
 router.post("/enformion-reverse-number-search", appServiceController.enformionReverseNumberSearch);
 router.post("/enformion-number-search", appServiceController.enformionCallerId);
+router.post("/enformion-background-search", appServiceController.enformionBackgroundSearch);
+router.post("/enformion-criminal-search", appServiceController.enformionCrimeRecord);
 
 export default router;

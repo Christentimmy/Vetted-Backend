@@ -11,14 +11,14 @@ import {
 } from "../services/crimeometer_service";
 import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
-import { fetchOffenders } from "../services/offender_service";
 
 import EnformionService from "../services/enformion";
 
 // Initialize Enformion Service
 const enformionService = new EnformionService({
-  apName: process.env.ENFORMION_AP_NAME || "",
-  apPassword: process.env.ENFORMION_AP_PASSWORD || "",
+  apName: process.env.ENFORMION_AP_NAME || "11667534f38a402595e26c7db8eba005",
+  apPassword:
+    process.env.ENFORMION_AP_PASSWORD || "1ecc34aa9f9446aeb09dc1750e52d0de",
 });
 
 export const appServiceController = {
@@ -87,6 +87,7 @@ export const appServiceController = {
         page ? Number(page) : 1 // default page = 1
       );
 
+
       if (!offenders || offenders.length === 0) {
         return res.status(404).json({ message: "No offenders found nearby" });
       }
@@ -99,8 +100,9 @@ export const appServiceController = {
         resultCount: offenders?.length || 0,
         req,
       });
+      const response = offenders["sex_offenders"];
 
-      res.json({ message: "Offenders found", data: offenders });
+      res.json({ message: "Offenders found", data: response });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Failed to fetch offenders" });
@@ -188,27 +190,6 @@ export const appServiceController = {
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Internal server error" });
-    }
-  },
-
-  getOffendersMap: async (req: Request, res: Response) => {
-    try {
-      const { lat, lon, radius } = req.query;
-
-      if (!lat || !lon) {
-        return res.status(400).json({ error: "lat and lon are required" });
-      }
-
-      const data = await fetchOffenders(
-        Number(lat),
-        Number(lon),
-        Number(radius) || 10
-      );
-
-      res.json(data);
-    } catch (error: any) {
-      console.error(error.message);
-      res.status(500).json({ error: "Failed to fetch offenders" });
     }
   },
 };

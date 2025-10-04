@@ -1,5 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
+import redisClient from "../config/redis";
 
 dotenv.config();
 
@@ -13,6 +14,14 @@ export const getSexOffendersNearby = async (
   page: number
 ) => {
   const url = `${BASE_URL}/sex-offenders/location`;
+  const cacheKey = `offenders:${lat}:${lng}:${radius}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    const cachedStr =
+      typeof cached === "string" ? cached : cached.toString("utf8");
+    return JSON.parse(cachedStr);
+  }
 
   try {
     const { data } = await axios.get(url, {
@@ -27,7 +36,10 @@ export const getSexOffendersNearby = async (
         page,
       },
     });
+
+    await redisClient.set(cacheKey, JSON.stringify(data));
     return data || [];
+
   } catch (error) {
     console.error(
       "Error fetching sex offenders:",

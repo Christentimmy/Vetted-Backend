@@ -18,8 +18,7 @@ export const getSexOffendersNearby = async (
 
   const cached = await redisClient.get(cacheKey);
   if (cached) {
-    const cachedStr =
-      typeof cached === "string" ? cached : cached.toString("utf8");
+    const cachedStr = cached.toString("utf8");
     return JSON.parse(cachedStr);
   }
 
@@ -37,9 +36,8 @@ export const getSexOffendersNearby = async (
       },
     });
 
-    await redisClient.set(cacheKey, JSON.stringify(data));
+    await redisClient.set(cacheKey, JSON.stringify(data),{ EX: 240 });
     return data || [];
-
   } catch (error) {
     console.error(
       "Error fetching sex offenders:",
@@ -51,6 +49,13 @@ export const getSexOffendersNearby = async (
 
 export const getSexOffendersByName = async (name: string) => {
   const url = `${BASE_URL}/sex-offenders/records?name=${name}`;
+  const cacheKey = `offender:${name}`;
+
+  const cached = await redisClient.get(cacheKey);
+  if (cached) {
+    const cachedStr = cached.toString("utf8");
+    return JSON.parse(cachedStr);
+  }
 
   try {
     const { data } = await axios.get(url, {
@@ -59,6 +64,8 @@ export const getSexOffendersByName = async (name: string) => {
         "Content-Type": "application/json",
       },
     });
+
+    await redisClient.set(cacheKey, JSON.stringify(data),{ EX: 240 });
     return data || [];
   } catch (error) {
     console.error(

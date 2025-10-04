@@ -19,4 +19,7 @@ router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByNam
 router.get("/phone-lookup", appServiceController.phoneLookup);
 router.post("/name-lookup", appServiceController.nameLookup);
 
+router.post("/enformion-reverse-number-search", appServiceController.enformionReverseNumberSearch);
+router.post("/enformion-number-search", appServiceController.enformionCallerId);
+
 export default router;

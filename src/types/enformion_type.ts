@@ -112,6 +112,9 @@ export interface CallerIdResponse {
     addresses: CallerIdAddress[];
     phones: CallerIdPhone[];
     emails: CallerIdEmail[];
+    email: CallerIdEmail;
+    isEmailValidated: boolean;
+    isBusiness: boolean;
   };
 }
 

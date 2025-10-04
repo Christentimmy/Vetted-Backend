@@ -14,6 +14,7 @@ import {
   ReversePhoneSearchRequest,
   ReversePhoneSearchResponse,
 } from "../types/enformion_type";
+import redisClient from "../config/redis";
 
 // ==================== SERVICE CLASS ====================
 
@@ -75,18 +76,24 @@ class EnformionService {
     params: ReversePhoneSearchRequest
   ): Promise<EnformionResponse<ReversePhoneSearchResponse[]>> {
     try {
-      const response = await this.axiosInstance.post(
-        "/ReversePhoneSearch",
-        params,
-        {
-          headers: this.buildHeaders("ReversePhone"),
-        }
-      );
+      const cacheKey = `ReversePhoneSearch:${params.Phone}`;
+      const cached = await redisClient.get(cacheKey);
+      // if (cached) {
+      //   const cachedStr = cached.toString("utf8");
+      //   return JSON.parse(cachedStr);
+      // }
 
-      return {
+      const res = await this.axiosInstance.post("/ReversePhoneSearch", params, {
+        headers: this.buildHeaders("ReversePhone"),
+      });
+      const response = {
         success: true,
-        data: response.data,
+        data: res.data,
       };
+
+      await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+
+      return response as EnformionResponse<ReversePhoneSearchResponse[]>;
     } catch (error) {
       return this.handleError(error);
     }
@@ -100,14 +107,26 @@ class EnformionService {
     params: CallerIdRequest
   ): Promise<EnformionResponse<CallerIdResponse>> {
     try {
-      const response = await this.axiosInstance.post("/Phone/Enrich", params, {
+      const cacheKey = `Phone/Enrich:${params.Phone}`;
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        const cachedStr = cached.toString("utf8");
+        const parsed = JSON.parse(cachedStr);
+        return parsed;
+      }
+
+      const res = await this.axiosInstance.post("/Phone/Enrich", params, {
         headers: this.buildHeaders("DevAPICallerID"),
       });
 
-      return {
+      const response = {
         success: true,
-        data: response.data,
+        data: res.data,
       };
+
+      await redisClient.set(cacheKey, JSON.stringify(response), { EX: 240 });
+
+      return response as EnformionResponse<CallerIdResponse>;
     } catch (error) {
       return this.handleError(error);
     }

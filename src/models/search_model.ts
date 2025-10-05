@@ -10,7 +10,7 @@ const searchLogSchema = new Schema<ISearchLog>({
   searchType: { 
     type: String,
     required: true,
-    enum: ['phone', 'name', 'sex_offender', 'location', 'other'],
+    enum: ['phone', 'name', 'sex_offender', 'location', 'other' , 'image'],
     index: true
   },
   query: { 

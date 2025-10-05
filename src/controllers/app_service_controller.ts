@@ -1,9 +1,15 @@
 import { Request, Response } from "express";
-import { reverseImageSearch } from "../services/reverse_image_service";
+import { googleReverseImageSearch } from "../services/google_image_service";
 import { getNumberDetails } from "../services/twilio_service";
-import { searchByPhoneNumber, searchByName, } from "../services/whitepages_service";
+import {
+  searchByPhoneNumber,
+  searchByName,
+} from "../services/whitepages_service";
 
-import { getSexOffendersNearby, getSexOffendersByName} from "../services/crimeometer_service";
+import {
+  getSexOffendersNearby,
+  getSexOffendersByName,
+} from "../services/crimeometer_service";
 import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
 import { CallerIdResponse } from "../types/enformion_type";
@@ -141,7 +147,30 @@ export const appServiceController = {
         ResultsPerPage: 2,
       });
 
-      res.status(200).json({ message: "Success", data: info });
+      const response = info["data"]["persons"];
+      if (!response || response.length === 0) {
+        return res.status(404).json({ message: "No data found" });
+      }
+
+      const mapped = response.map((e) => {
+        return {
+          id: e["tahoeId"],
+          name: e["fullName"],
+          dateOfBirth: e["dobFirstSeen"],
+          age: e["age"],
+          address: e["addresses"].map((a: any) => a["fullAddress"]),
+          phoneNumnber: e["phoneNumbers"].map((p: any) => p["phoneNumber"]),
+          email: e["emailAddresses"].map((e: any) => e["emailAddress"]),
+          relatives: e["relativesSummary"].map((r: any) => {
+            return {
+              name: r["firstName"] + " " + r["lastName"],
+              relativeType: r["relativeType"],
+            };
+          }),
+        };
+      });
+
+      res.status(200).json({ message: "Success", data: mapped });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Lookup failed" });
@@ -207,7 +236,7 @@ export const appServiceController = {
     }
   },
 
-  reverseImage: async (req: Request, res: Response) => {
+  googleImageSearch: async (req: Request, res: Response) => {
     try {
       if (!req.body) {
         res.status(400).json({ message: "Image is required" });
@@ -220,7 +249,16 @@ export const appServiceController = {
         return;
       }
 
-      const result = await reverseImageSearch(imageUrl || req.file.path);
+      const result = await googleReverseImageSearch(imageUrl || req.file.path);
+
+      await logSearch({
+        userId: res.locals.userId,
+        searchType: "image",
+        query: { imageUrl },
+        resultCount: result?.similarImages?.length || 0,
+        req,
+      });
+
       res.json({ message: "Success", data: result });
     } catch (error) {
       console.log(error);
@@ -247,16 +285,16 @@ export const appServiceController = {
         return res.status(404).json({ message: "No offenders found nearby" });
       }
 
+      const response = offenders["sex_offenders"];
+
       // Log the search
       await logSearch({
         userId: res.locals.user?._id,
         searchType: "sex_offender",
         query: { lat, lng, radius, page },
-        resultCount: offenders?.length || 0,
+        resultCount: response?.length || 0,
         req,
       });
-
-      const response = offenders["sex_offenders"];
 
       res.json({ message: "Offenders found", data: response });
     } catch (error) {
@@ -277,6 +315,16 @@ export const appServiceController = {
       if (!response || response.length === 0) {
         return res.status(404).json({ message: "No offenders found" });
       }
+
+      // Log the search
+      await logSearch({
+        userId: res.locals.user?._id,
+        searchType: "sex_offender",
+        query: { name },
+        resultCount: response?.length || 0,
+        req,
+      });
+
       res.json({ message: "Offender found", data: response });
     } catch (error) {
       console.error(error);
@@ -338,7 +386,7 @@ export const appServiceController = {
     }
   },
 
-  googleImageSearch: async (req: Request, res: Response) => {
+  zenserpReverseImage: async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Image is required" });

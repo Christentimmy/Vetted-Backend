@@ -1,6 +1,7 @@
-import mongoose, { Document } from "mongoose";
+import  { Document, Types } from "mongoose";
 
 export interface IUser extends Document {
+  _id: Types.ObjectId;
   displayName: string;
   email: string;
   phone: string;
@@ -35,7 +36,7 @@ export interface IUser extends Document {
   };
 
   inviteCode: string,
-  invitedBy: mongoose.Schema.Types.ObjectId,
+  invitedBy: Types.ObjectId,
   premiumCredits: number,
   premiumExpiresAt: Date,
   totalInvites: number,

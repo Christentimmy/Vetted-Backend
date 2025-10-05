@@ -6,10 +6,11 @@ import { statusChecker } from "../middlewares/status_middleware";
 
 const router = express.Router();
 
-router.use(tokenValidationMiddleware, statusChecker);
-
-router.get("/my-code", invitationController.getMyInviteCode);
+router.use(tokenValidationMiddleware);
 router.post("/redeem", invitationController.redeemInviteCode);
+
+router.use(statusChecker);
+router.get("/my-code", invitationController.getMyInviteCode);
 router.get("/stats", invitationController.getInviteStats);
 router.get("/premium-status", invitationController.getPremiumStatus);
 

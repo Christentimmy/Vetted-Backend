@@ -5,6 +5,7 @@ import { generateInviteCode } from "../utils/invite_code_generator";
 import { INVITATION_REWARDS, applyReward } from "../config/rewards";
 import { sendPushNotification, NotificationType } from "../config/onesignal";
 import { IUser } from "../types/user_type";
+import mongoose, { Types } from "mongoose";
 
 export const invitationController = {
   getMyInviteCode: async (req: Request, res: Response) => {
@@ -52,7 +53,8 @@ export const invitationController = {
    */
   redeemInviteCode: async (req: Request, res: Response) => {
     try {
-      const user = res.locals.user;
+      const userId = res.locals.userId;
+      const user = await UserModel.findById(userId);
       if (!user) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -83,7 +85,7 @@ export const invitationController = {
       }
 
       // Find the inviter by invite code
-      const inviter = await UserModel.findOne({ inviteCode: normalizedCode });
+      const inviter : IUser = await UserModel.findOne({ inviteCode: normalizedCode });
       if (!inviter) {
         res.status(404).json({ message: "Invalid invite code" });
         return;
@@ -128,6 +130,7 @@ export const invitationController = {
       user.premiumCredits = inviteeRewardResult.credits;
       user.premiumExpiresAt = inviteeRewardResult.expiresAt;
       user.invitedBy = inviter._id;
+
       await user.save();
 
       // Record redemption

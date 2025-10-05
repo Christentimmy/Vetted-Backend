@@ -59,5 +59,6 @@ const subscriptionSchema = new Schema<ISubscription>(
 // Index for efficient queries
 subscriptionSchema.index({ userId: 1, status: 1 });
 subscriptionSchema.index({ stripeSubscriptionId: 1 });
+subscriptionSchema.index({ status: 1, createdAt: 1 });
 
 export default mongoose.model<ISubscription>("Subscription", subscriptionSchema);

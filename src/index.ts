@@ -17,6 +17,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 
 import "./jobs/subscription_job";
+import "./jobs/cleanup_incomplete_subscriptions";
 
 import { handleWebhook } from "./services/stripe_service";
 

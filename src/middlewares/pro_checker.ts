@@ -1,4 +1,5 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+
 
 export const proChecker = async (
   req: Request,
@@ -7,15 +8,40 @@ export const proChecker = async (
 ) => {
   try {
     const user = res.locals.user;
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
+    if (user.subscription.status === "active") {
+      next();
       return;
     }
-    if (user.subscription.status !== "active") {
-      res.status(403).json({ message: "User is not a pro" });
+
+    if (user.premiumExpiresAt) {
+      const now = new Date();
+      const expiresAt = new Date(user.premiumExpiresAt);
+      
+      if (expiresAt > now) {
+        next();
+        return;
+      }
+    }
+
+    if (user.premiumCredits > 0) {
+      user.premiumCredits -= 1;
+      await user.save();
+      res.locals.creditsUsed = true;
+      res.locals.creditsRemaining = user.premiumCredits;
+
+      next();
       return;
     }
-    next();
+
+    res.status(403).json({ 
+      message: "Premium access required",
+      details: {
+        hasSubscription: false,
+        creditsAvailable: 0,
+        suggestion: "Subscribe or invite friends to get free credits"
+      }
+    });
+    return;
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });

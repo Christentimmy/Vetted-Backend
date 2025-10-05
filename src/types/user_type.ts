@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface IUser extends Document {
   displayName: string;
@@ -33,6 +33,13 @@ export interface IUser extends Document {
     currentPeriodEnd?: Date;
     cancelAtPeriodEnd?: boolean;
   };
+
+  inviteCode: string,
+  invitedBy: mongoose.Schema.Types.ObjectId,
+  premiumCredits: number,
+  premiumExpiresAt: Date,
+  totalInvites: number,
+
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

@@ -87,6 +87,29 @@ const userSchema = new mongoose.Schema<IUser>(
       currentPeriodEnd: { type: Date },
       cancelAtPeriodEnd: { type: Boolean, default: false },
     },
+
+    inviteCode: { 
+      type: String, 
+      unique: true, 
+      sparse: true,
+      uppercase: true 
+    },
+    invitedBy: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User" 
+    },
+    premiumCredits: { 
+      type: Number, 
+      default: 0 
+    },
+    premiumExpiresAt: { 
+      type: Date 
+    },
+    totalInvites: { 
+      type: Number, 
+      default: 0 
+    },
+
     isDeleted: { type: Boolean, default: false },
   },
   {

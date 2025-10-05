@@ -12,6 +12,7 @@ import appServiceRoutes from "./routes/app_service_route";
 import subscriptionRoutes from "./routes/subscription_routes";
 import adminRoutes from "./routes/admin_route";
 import supportTicketRoutes from "./routes/support_ticket_routes"; 
+import invitationRoutes from "./routes/invitation_routes";
 
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -50,6 +51,7 @@ app.use("/api/services", appServiceRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/support-ticket", supportTicketRoutes);
+app.use("/api/invitations", invitationRoutes);
 
 // Connect to database
 connectToDatabase();

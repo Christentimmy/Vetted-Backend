@@ -200,8 +200,25 @@ export const appServiceController = {
       if (!info.success) {
         return res.status(404).json({ message: "No data found" });
       }
+      const criminalRecords = info["data"]["criminalRecords"];
+      const response = criminalRecords.map((e)=>{
+        return {
+          name: e["names"][0]["firstName"]+" "+e["names"][0]["lastName"],
+          offenderAttributes: e["offenderAttributes"],
+          caseDetails: {
+            caseNumber: e["caseDetails"][0]["caseNumber"],
+            rawCategory: e["caseDetails"][0]["rawCategory"],
+            courtCounty: e["caseDetails"][0]["courtCounty"],
+            fees: e["caseDetails"][0]["fees"],
+            fines: e["caseDetails"][0]["fines"],
+            caseDate: e["caseDetails"][0]["caseDate"],
+          },
+          offense: e["offenses"][0]["offenseDescription"][0],
+          image: e["images"][0]["imageUrl"],
+        }
+      });
 
-      res.status(200).json({ message: "Success", data: info["data"] });
+      res.status(200).json({ message: "Success", data: response });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Lookup failed" });

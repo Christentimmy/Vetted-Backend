@@ -231,7 +231,6 @@ class EnformionService {
           headers: this.buildHeaders("CriminalV2"),
         }
       );
-      console.log("Response", response);
 
       return {
         success: true,

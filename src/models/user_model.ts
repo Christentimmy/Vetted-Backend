@@ -102,6 +102,13 @@ const userSchema = new mongoose.Schema<IUser>(
       type: Number, 
       default: 0 
     },
+    notificationSettings: {
+      general: { type: Boolean, default: true },
+      trendingPost: { type: Boolean, default: true },
+      newComments: { type: Boolean, default: true },
+      alertForWomenNames: { type: Boolean, default: true },
+      reactions: { type: Boolean, default: true },
+    },
     premiumExpiresAt: { 
       type: Date 
     },

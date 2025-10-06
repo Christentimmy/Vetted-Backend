@@ -1,5 +1,13 @@
 import  { Document, Types } from "mongoose";
 
+interface INotificationSettings {
+  general: boolean;
+  trendingPost: boolean;
+  newComments: boolean;
+  alertForWomenNames: boolean;
+  reactions: boolean;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   displayName: string;
@@ -44,4 +52,6 @@ export interface IUser extends Document {
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+
+  notificationSettings: INotificationSettings;
 }

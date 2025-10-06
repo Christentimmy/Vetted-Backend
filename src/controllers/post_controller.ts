@@ -97,13 +97,18 @@ export const postController = {
       // Send notifications for each matching alert
       for (const alert of matchingAlerts) {
         const user = alert.userId;
-        await sendPushNotification(
-          user._id.toString(),
-          user.oneSignalPlayerId,
-          NotificationType.SYSTEM,
-          `A new post matching your alert "${alert.name}" has been created!`,
-          `/posts/${newPost._id}`
-        );
+        if (
+          user.oneSignalPlayerId &&
+          user.notificationSettings.alertForWomenNames
+        ) {
+          await sendPushNotification(
+            user._id.toString(),
+            user.oneSignalPlayerId,
+            NotificationType.SYSTEM,
+            `A new post matching your alert "${alert.name}" has been created!`,
+            `/posts/${newPost._id}`
+          );
+        }
       }
     } catch (error) {
       console.log(error);
@@ -393,7 +398,10 @@ export const postController = {
       post.engagement.commentCount++;
       await post.save();
 
-      if (post.authorId.oneSignalPlayerId) {
+      if (
+        post.authorId.oneSignalPlayerId &&
+        post.authorId.notificationSettings.newComments
+      ) {
         await sendPushNotification(
           post.authorId._id.toString(),
           post.authorId.oneSignalPlayerId,
@@ -450,7 +458,10 @@ export const postController = {
       await post.reactToPost(user, reactionType, emoji);
       res.status(200).json({ message: "Reaction updated successfully" });
 
-      if (post.authorId.oneSignalPlayerId) {
+      if (
+        post.authorId.oneSignalPlayerId &&
+        post.authorId.notificationSettings.reactions
+      ) {
         await sendPushNotification(
           post.authorId._id.toString(),
           post.authorId.oneSignalPlayerId,

@@ -665,4 +665,49 @@ export const userController = {
       res.status(500).json({ error: err.message });
     }
   },
+
+  changeNotificationSetting: async (req: Request, res: Response) => {
+    try {
+      if (req.body!) {
+        res.status(400).json({ message: "Invalid-Request" });
+        return;
+      }
+
+      const user = res.locals.user;
+      if (!user) {
+        res.status(400).json({ message: "User not authorized" });
+        return;
+      }
+
+      const {
+        general,
+        trendingPost,
+        newComments,
+        alertForWomenNames,
+        reactions,
+      } = req.body;
+
+      if (typeof general === "boolean") {
+        user.notificationSettings.general = general;
+      }
+      if (typeof trendingPost === "boolean") {
+        user.notificationSettings.trendingPost = trendingPost;
+      }
+      if (typeof newComments === "boolean") {
+        user.notificationSettings.newComments = newComments;
+      }
+      if (typeof alertForWomenNames === "boolean") {
+        user.notificationSettings.alertForWomenNames = alertForWomenNames;
+      }
+      if (typeof reactions === "boolean") {
+        user.notificationSettings.reactions = reactions;
+      }
+
+      await user.save();
+      res.status(200).json({ message: "Notification setting modified" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server-Error" });
+    }
+  },
 };

@@ -42,5 +42,7 @@ router.delete('/delete-alert/:alertId', userController.deleteAlert);
 
 router.post('/create-report', reportController.createReport);
 
+router.post("/change-notification-settings", userController.changeNotificationSetting);
+
 
 export default router;

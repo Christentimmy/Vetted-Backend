@@ -204,7 +204,7 @@ export const appServiceController = {
       const response = criminalRecords.map((e)=>{
         return {
           name: e["names"][0]["firstName"]+" "+e["names"][0]["lastName"],
-          offenderAttributes: e["offenderAttributes"],
+          offenderAttributes: e["offenderAttributes"][0],
           caseDetails: {
             caseNumber: e["caseDetails"][0]["caseNumber"],
             rawCategory: e["caseDetails"][0]["rawCategory"],

@@ -224,6 +224,18 @@ class EnformionService {
     params: CriminalSearchRequest
   ): Promise<EnformionResponse<CriminalSearchResponse>> {
     try {
+      const cacheKey = `CriminalSearch:${params.FirstName}:${params.LastName}`;
+
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached.toString());
+          return parsed;
+        }
+      } catch (cacheReadErr) {
+        console.warn("⚠️ Redis read failed:", cacheReadErr.message);
+      }
+
       const response = await this.axiosInstance.post(
         "/CriminalSearch/V2",
         params,
@@ -232,10 +244,18 @@ class EnformionService {
         }
       );
 
-      return {
+      const result = {
         success: true,
         data: response.data,
       };
+
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 240 });
+      } catch (cacheWriteErr) {
+        console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+      }
+
+      return result as EnformionResponse<CriminalSearchResponse>;
     } catch (error) {
       console.log("Error", error);
       return this.handleError(error);

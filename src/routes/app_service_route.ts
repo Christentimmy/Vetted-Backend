@@ -20,6 +20,8 @@ router.post("/enformion-background-search", appServiceController.enformionBackgr
 router.post("/enformion-criminal-search", appServiceController.enformionCrimeRecord);
 router.post("/enformion-number-search", appServiceController.enformionCallerId);
 
+router.post("/name-lookup", appServiceController.nameLookup);
+
 //crimeometer
 router.get("/get-sex-offenders", appServiceController.getSexOffendersByLocation);
 router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByName);

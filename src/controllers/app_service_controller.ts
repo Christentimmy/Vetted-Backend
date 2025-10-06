@@ -214,7 +214,7 @@ export const appServiceController = {
             caseDate: e["caseDetails"][0]["caseDate"],
           },
           offense: e["offenses"][0]["offenseDescription"][0],
-          image: e["images"][0]["imageUrl"],
+          image: (e["images"][0] && e["images"][0]["imageUrl"]) ? e["images"][0]["imageUrl"] : "",
         }
       });
 

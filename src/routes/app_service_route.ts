@@ -13,18 +13,22 @@ const router = express.Router();
 //TODO: All Zenserp will be shut down
 //TODO: All WhitePage will be shut down
 
-router.use(tokenValidationMiddleware, statusChecker, proChecker);
+router.use(tokenValidationMiddleware, statusChecker);
 
 //enformion
 router.post("/enformion-background-search", appServiceController.enformionBackgroundSearch);
 router.post("/enformion-criminal-search", appServiceController.enformionCrimeRecord);
 router.post("/enformion-number-search", appServiceController.enformionCallerId);
 
+//whitepage
 router.post("/name-lookup", appServiceController.nameLookup);
 
 //crimeometer
-router.get("/get-sex-offenders", appServiceController.getSexOffendersByLocation);
-router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByName);
+// router.get("/get-sex-offenders", appServiceController.getSexOffendersByLocation);
+// router.get("/get-sex-offender-by-name", appServiceController.getSexOffenderByName);
+
+//offenders.io
+router.post("/search-offender", appServiceController.searchOffender);
 
 //google image
 router.post("/google-image-search", searchMedia.single("file"), appServiceController.googleImageSearch);

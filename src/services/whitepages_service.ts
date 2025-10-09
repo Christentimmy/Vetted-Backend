@@ -1,5 +1,6 @@
 import axios from "axios";
 import dotenv from "dotenv";
+import redisClient from "../config/redis";
 
 dotenv.config();
 
@@ -51,12 +52,29 @@ export const searchByName = async (
     if (zipcode) params.append("zipcode", zipcode);
 
     const url = `${BASE_URL}/person/?${params.toString()}`;
+    const cacheKey = `whitepages:${name}`;
+
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        const cachedStr = cached.toString("utf8");
+        return JSON.parse(cachedStr);
+      }
+    } catch (cacheReadErr) {
+      console.warn("⚠️ Redis read failed:", cacheReadErr.message);
+    }
 
     const { data } = await axios.get(url, {
       headers: {
         "X-Api-Key": WHITEPAGES_API_KEY || "",
       },
     });
+
+    try {
+      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 50 });
+    } catch (cacheWriteErr) {
+      console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+    }
 
     return data;
   } catch (error: any) {

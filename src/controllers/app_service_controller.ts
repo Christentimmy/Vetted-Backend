@@ -14,6 +14,7 @@ import { logSearch } from "../services/search_logger";
 import { zenserpReverseImage } from "../services/zenserpReverseImage";
 import { CallerIdResponse } from "../types/enformion_type";
 
+import { searchSexOffenderOnMap } from "../services/offendersio_service";
 
 import EnformionService from "../services/enformion";
 
@@ -201,9 +202,9 @@ export const appServiceController = {
         return res.status(404).json({ message: "No data found" });
       }
       const criminalRecords = info["data"]["criminalRecords"];
-      const response = criminalRecords.map((e)=>{
+      const response = criminalRecords.map((e) => {
         return {
-          name: e["names"][0]["firstName"]+" "+e["names"][0]["lastName"],
+          name: e["names"][0]["firstName"] + " " + e["names"][0]["lastName"],
           offenderAttributes: e["offenderAttributes"][0],
           caseDetails: {
             caseNumber: e["caseDetails"][0]["caseNumber"],
@@ -214,8 +215,11 @@ export const appServiceController = {
             caseDate: e["caseDetails"][0]["caseDate"],
           },
           offense: e["offenses"][0]["offenseDescription"][0],
-          image: (e["images"][0] && e["images"][0]["imageUrl"]) ? e["images"][0]["imageUrl"] : "",
-        }
+          image:
+            e["images"][0] && e["images"][0]["imageUrl"]
+              ? e["images"][0]["imageUrl"]
+              : "",
+        };
       });
 
       res.status(200).json({ message: "Success", data: response });
@@ -389,6 +393,22 @@ export const appServiceController = {
         zipcode
       );
 
+      const response = result.map((e) => {
+        const relatives = Array.isArray(e.relatives)
+          ? e.relatives.map((r) => r.name)
+          : [];
+        const phones = Array.isArray(e.phones)
+          ? e.phones.map((r) => r.number)
+          : [];
+
+        return {
+          ...e,
+          current_addresses: e["current_addresses"][0]["address"] ?? [],
+          phones,
+          relatives,
+        };
+      });
+
       // Log the search
       await logSearch({
         userId: res.locals.user?._id,
@@ -398,7 +418,7 @@ export const appServiceController = {
         req,
       });
 
-      res.json({ success: true, data: result });
+      res.json({ success: true, data: response });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });
     }
@@ -411,6 +431,44 @@ export const appServiceController = {
       }
       const result = await zenserpReverseImage(req.file.path);
       res.json({ message: "Success", data: result });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  searchOffender: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "Bad Request" });
+        return;
+      }
+      const { firstName, lastName } = req.body;
+      if (!firstName || !lastName) {
+        res.status(400).json({
+          message: "First name and last name are required",
+        });
+        return;
+      }
+
+      const result = await searchSexOffenderOnMap(firstName, lastName);
+      const offenders = result["offenders"];
+      if (offenders.length === 0) {
+        res.status(400).json({ message: "No Data Found" });
+        return;
+      }
+
+      const response = offenders.filter((r: any) => r["lat"] !== -1);
+      res.json({ message: "Success", data: response });
+
+      // Log the search
+      await logSearch({
+        userId: res.locals.user?._id,
+        searchType: "sex_offender",
+        query: { firstName },
+        resultCount: response?.length || 0,
+        req,
+      });
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Internal server error" });

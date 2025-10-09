@@ -39,7 +39,6 @@ function startSubscriptionJob() {
   });
 
   job.start();
-  console.log('Subscription monitoring job started');
 }
 
 startSubscriptionJob();

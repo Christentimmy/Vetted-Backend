@@ -261,6 +261,78 @@ class EnformionService {
       return this.handleError(error);
     }
   }
+
+  async marriageSearch(
+    firstName: string,
+    lastName: string,
+    middleName: string,
+    address: string
+  ) {
+    try {
+      let city = "";
+      let state = "";
+
+      // Split by comma first (helps with multi-part addresses)
+      const parts = address.split(",");
+
+      if (parts.length >= 2) {
+        // Example:
+        // parts[0] = "3021 94th St East Elmhurst"
+        // parts[1] = " NY 11369"
+        const stateZip = parts[1].trim().split(" ");
+        state = stateZip[0]?.trim() || "";
+        city = parts[0].split(" ").slice(-1)[0]?.trim() || ""; // last word before comma as city guess
+      } else {
+        // fallback if no comma
+        const match = address.match(/([A-Za-z\s]+),?\s*([A-Z]{2})\s*\d{5}/);
+        if (match) {
+          city = match[1].trim();
+          state = match[2].trim();
+        }
+      }
+
+      const cacheKey = `MarriageSearch:${firstName}:${lastName}`;
+
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached.toString());
+          return parsed;
+        }
+      } catch (cacheReadErr) {
+        console.warn("⚠️ Redis read failed:", cacheReadErr.message);
+      }
+
+      const response = await this.axiosInstance.post(
+        "/MarriageSearch",
+        {
+          FirstName: firstName,
+          LastName: lastName,
+          MiddleName: middleName,
+          City: city,
+          State: state,
+        },
+        {
+          headers: this.buildHeaders("Marriage"),
+        }
+      );
+
+      const result = {
+        success: true,
+        data: response.data,
+      };
+
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 50 });
+      } catch (cacheWriteErr) {
+        console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+      }
+
+      return result;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 }
 
 export default EnformionService;

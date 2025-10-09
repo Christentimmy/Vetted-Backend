@@ -167,7 +167,7 @@ export const userController = {
           "in a relationship",
           "engaged",
           "married",
-          "deparated",
+          "separated",
           "divorced",
           "widowed",
         ]).includes(relationStatus)

@@ -40,8 +40,9 @@ export const getSexOffendersNearby = async (
       },
     });
 
+
     try {
-      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 240 });
+      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 50 });
     } catch (cacheWriteErr) {
       console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
     }

@@ -13,7 +13,7 @@ const router = express.Router();
 //TODO: All Zenserp will be shut down
 //TODO: All WhitePage will be shut down
 
-router.use(tokenValidationMiddleware, statusChecker);
+router.use(tokenValidationMiddleware, statusChecker, proChecker);
 
 //enformion
 router.post("/enformion-background-search", appServiceController.enformionBackgroundSearch);

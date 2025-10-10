@@ -32,5 +32,6 @@ router.post("/search-offender", appServiceController.searchOffender);
 
 //google image
 router.post("/google-image-search", searchMedia.single("file"), appServiceController.googleImageSearch);
+router.post("/tineye-image-search", searchMedia.single("file"), appServiceController.tinEyeImageSearch);
 
 export default router;

@@ -15,8 +15,8 @@ import { zenserpReverseImage } from "../services/zenserpReverseImage";
 import { CallerIdResponse } from "../types/enformion_type";
 
 import { searchSexOffenderOnMap } from "../services/offendersio_service";
-
 import EnformionService from "../services/enformion";
+import { tinEyeService } from "../services/tineye_service";
 
 if (!process.env.ENFORMION_AP_NAME || !process.env.ENFORMION_AP_PASSWORD) {
   throw new Error("ENFORMION_AP_NAME or ENFORMION_AP_PASSWORD not found");
@@ -472,6 +472,39 @@ export const appServiceController = {
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  tinEyeImageSearch: async (req: Request, res: Response) => {
+    try {
+       const file =  req.file?.path;
+       if(!file){
+        res.status(404).json({message: "Image is required"});
+        return;
+       }
+
+      const tinRes = await tinEyeService.search(file);
+
+      const result = tinRes["results"]["matches"];
+      if (!result) {
+        res.status(404).json({ message: "No Data Found" });
+        return;
+      }
+
+      const mappedResponse = result.map((r: any) => {
+        return {
+          score: r["score"] || 0.0,
+          imageUrl: r["backlinks"][0]["url"] || "",
+          source: r["backlinks"][0]["backlink"] || "",
+          overlay: `https://api.tineye.com/rest/${r["overlay"]}` || "",
+          domain: r["domain"] || "",
+        };
+      });
+
+      res.status(200).json({ message: "Success", data: mappedResponse });
+    } catch (error) {
+      console.error("Error Searching Image", error.message);
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 };

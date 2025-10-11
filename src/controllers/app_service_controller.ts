@@ -45,10 +45,15 @@ export const appServiceController = {
       const phoneEnrich = await enformionService.phoneEnrich({
         Phone: number,
       });
+
       const reverseInfo = await enformionService.reversePhoneSearch({
         Phone: number,
       });
       let personFromEnrich: CallerIdResponse | undefined = phoneEnrich["data"];
+      if (personFromEnrich?.person === undefined) {
+        return res.status(404).json({ message: "Not data found" });
+      }
+
       const mapped = mapReverseInfo(reverseInfo);
 
       const response = {
@@ -393,6 +398,11 @@ export const appServiceController = {
         zipcode
       );
 
+      // console.log(result[0]);
+      if (!result || result.length === 0) {
+        return res.status(404).json({ message: "No data found" });
+      }
+
       const response = result.map((e) => {
         const relatives = Array.isArray(e.relatives)
           ? e.relatives.map((r) => r.name)
@@ -401,13 +411,20 @@ export const appServiceController = {
           ? e.phones.map((r) => r.number)
           : [];
 
+          const currentAddress =
+          Array.isArray(e.current_addresses) && e.current_addresses.length
+            ? e.current_addresses[0].address
+            : null;
+
         return {
           ...e,
-          current_addresses: e["current_addresses"][0]["address"] ?? [],
+          current_addresses: currentAddress,
           phones,
           relatives,
         };
       });
+      
+      res.status(200).json({ message: "Success", data: response });
 
       // Log the search
       await logSearch({
@@ -418,7 +435,6 @@ export const appServiceController = {
         req,
       });
 
-      res.json({ success: true, data: response });
     } catch (err) {
       res.status(500).json({ success: false, message: "Lookup failed" });
     }

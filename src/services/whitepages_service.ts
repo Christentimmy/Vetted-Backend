@@ -48,21 +48,21 @@ export const searchByName = async (
     });
     if (street) params.append("street", street);
     if (city) params.append("city", city);
-    if (state_code) params.append("state_code", state_code);
-    if (zipcode) params.append("zipcode", zipcode);
+    // if (state_code) params.append("state_code", state_code);
+    // if (zipcode) params.append("zipcode", zipcode);
 
     const url = `${BASE_URL}/person/?${params.toString()}`;
     const cacheKey = `whitepages:${name}`;
 
-    try {
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        const cachedStr = cached.toString("utf8");
-        return JSON.parse(cachedStr);
-      }
-    } catch (cacheReadErr) {
-      console.warn("⚠️ Redis read failed:", cacheReadErr.message);
-    }
+    // try {
+    //   const cached = await redisClient.get(cacheKey);
+    //   if (cached) {
+    //     const cachedStr = cached.toString("utf8");
+    //     return JSON.parse(cachedStr);
+    //   }
+    // } catch (cacheReadErr) {
+    //   console.warn("⚠️ Redis read failed:", cacheReadErr.message);
+    // }
 
     const { data } = await axios.get(url, {
       headers: {
@@ -70,11 +70,11 @@ export const searchByName = async (
       },
     });
 
-    try {
-      await redisClient.set(cacheKey, JSON.stringify(data), { EX: 50 });
-    } catch (cacheWriteErr) {
-      console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
-    }
+    // try {
+    //   await redisClient.set(cacheKey, JSON.stringify(data), { EX: 50 });
+    // } catch (cacheWriteErr) {
+    //   console.warn("⚠️ Redis write failed:", cacheWriteErr.message);
+    // }
 
     return data;
   } catch (error: any) {

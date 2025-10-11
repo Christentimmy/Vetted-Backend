@@ -529,7 +529,7 @@ export const userController = {
     try {
       const userId = res.locals.user._id;
 
-      const posts = await Post.find({ authorId: userId })
+      const posts = await Post.find({ authorId: userId, isDeleted: false })
         .populate("authorId")
         .sort({
           createdAt: -1,

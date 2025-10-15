@@ -668,7 +668,7 @@ export const userController = {
 
   changeNotificationSetting: async (req: Request, res: Response) => {
     try {
-      if (req.body!) {
+      if (!req.body) {
         res.status(400).json({ message: "Invalid-Request" });
         return;
       }

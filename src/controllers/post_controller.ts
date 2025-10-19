@@ -262,7 +262,7 @@ export const postController = {
         {
           personName: nameFilter,
           ageRange: ageRangeFilter,
-          personLocation: locationFilter,
+          personLocation: locationFilter?.split(",")[0],
           sort: sortValue,
           leadingFlag,
         }

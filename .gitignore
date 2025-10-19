@@ -32,3 +32,8 @@ Thumbs.db
 
 vision-471214-3de562e0af22.json
 vetted-vision.json
+
+# Load testing files (temporary)
+load-tests/
+tests/
+jest.config.js

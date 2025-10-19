@@ -39,11 +39,11 @@ export const sendOtpToUserPhoneNumber = async (userPhoneNumber: string) => {
       throw new Error("TWILIO_PHONE_NUMBER environment variable is not set");
     }
 
-    const sentMessage = await client.messages.create({
-      body: message,
-      to: userPhoneNumber,
-      from: fromNumber,
-    });
+    // const sentMessage = await client.messages.create({
+    //   body: message,
+    //   to: userPhoneNumber,
+    //   from: fromNumber,
+    // });
 
     return { success: true, otp }; // Return the OTP so that it can be stored in the user model
   } catch (error) {

@@ -31,8 +31,6 @@ function startSubscriptionJob() {
           console.error(`Error processing subscription ${sub._id}:`, error);
         }
       }
-
-      console.log(`Subscription check completed at ${new Date().toISOString()}`);
     } catch (error) {
       console.error('Error in subscription job:', error);
     }

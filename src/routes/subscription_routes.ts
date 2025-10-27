@@ -21,6 +21,8 @@ router.use(requireActiveSubscription);
 router.get("/current", subscriptionController.getCurrentSubscription);
 router.post("/cancel", subscriptionController.cancelUserSubscription);
 router.post("/reactivate", subscriptionController.reactivateUserSubscription);
+router.post("/top-up", subscriptionController.createTopUp);
+router.get("/feature-usage", subscriptionController.getFeatureUsage);
 // router.post("/portal", subscriptionController.getPortalSession);
 
 export default router;

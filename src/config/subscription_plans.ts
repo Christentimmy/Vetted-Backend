@@ -10,8 +10,8 @@ export const PLANS = {
   PRO: {
     id: "pro",
     name: "Pro",
-    price: 99,
-    stripePriceId: "price_1SE8E3CEHhMF7pKAyr0meQ20",
+    price: 9.99,
+    stripePriceId: "price_1SMt8hCEHhMF7pKAR9jqPgH4",
   }
 };
 

@@ -5,10 +5,11 @@ import {
   cancelSubscription,
   reactivateSubscription,
   getCustomerPortalSession,
-  handleWebhook,
+  createTopUpCheckoutSession
 } from "../services/stripe_service";
 import { PLANS } from "../config/subscription_plans";
 import Subscription from "../models/subscription_model";
+import User from "../models/user_model";
 
 export const subscriptionController = {
   getPlans: async (req: Request, res: Response) => {
@@ -162,4 +163,63 @@ export const subscriptionController = {
     res.redirect(redirecUrl);
     return;
   },
+
+  createTopUp: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized" });
+      }
+
+      const session = await createTopUpCheckoutSession(userId);
+
+      res.json({
+        success: true,
+        checkoutUrl: session.url,
+        sessionId: session.id,
+      });
+    } catch (error: any) {
+      console.error("Create top-up error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to create top-up session",
+      });
+    }
+  },
+
+  getFeatureUsage: async (req: Request, res: Response) => {
+    try {
+      const userId = res.locals.userId;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "Unauthorized" });
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: "User not found" });
+      }
+
+      res.json({
+        success: true,
+        featureUsage: user.featureUsage || {
+          enformionCriminalSearch: 0,
+          enformionNumberSearch: 0,
+          nameLookup: 0,
+          searchOffender: 0,
+          tinEyeImageSearch: 0,
+          lastResetDate: null,
+        },
+        hasActiveSubscription: user.subscription?.status === "active",
+      });
+    } catch (error: any) {
+      console.error("Get feature usage error:", error);
+      res.status(500).json({
+        success: false,
+        error: error.message || "Failed to get feature usage",
+      });
+    }
+  },
 };
+

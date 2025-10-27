@@ -116,6 +116,14 @@ const userSchema = new mongoose.Schema<IUser>(
       type: Number, 
       default: 0 
     },
+    featureUsage: {
+      enformionCriminalSearch: { type: Number, default: 0 },
+      enformionNumberSearch: { type: Number, default: 0 },
+      nameLookup: { type: Number, default: 0 },
+      searchOffender: { type: Number, default: 0 },
+      tinEyeImageSearch: { type: Number, default: 0 },
+      lastResetDate: { type: Date, default: Date.now },
+    },
 
     isDeleted: { type: Boolean, default: false },
   },

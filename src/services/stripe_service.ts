@@ -4,6 +4,7 @@ import Subscription from "../models/subscription_model";
 import { PLANS } from "../config/subscription_plans";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { FEATURE_LIMITS } from "../config/feature_limits";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -44,7 +45,7 @@ export const createCheckoutSession = async (userId: string) => {
     payment_method_types: ["card"],
     line_items: [
       {
-        price: "price_1SE8E3CEHhMF7pKAyr0meQ20",
+        price: "price_1SMt8hCEHhMF7pKAR9jqPgH4",
         quantity: 1,
       },
     ],
@@ -130,6 +131,52 @@ export const getCustomerPortalSession = async (userId: string) => {
   return session;
 };
 
+// Create a one-time payment session for feature top-up
+export const createTopUpCheckoutSession = async (userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  // Check if user has active subscription
+  if (user.subscription?.status !== "active") {
+    throw new Error("Active subscription required to purchase top-ups");
+  }
+
+  let customerId = user.stripeCustomerId;
+  if (!customerId) {
+    const customer = await createStripeCustomer(user);
+    customerId = customer.id;
+    user.stripeCustomerId = customer.id;
+    await user.save();
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    customer: customerId,
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "Feature Top-Up",
+            description: "Add 1 request to each premium feature",
+          },
+          unit_amount: Math.round(FEATURE_LIMITS.TOP_UP_PRICE * 100), // Convert to cents
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    success_url: `${process.env.CLIENT_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.CLIENT_URL}/subscription/canceled`,
+    metadata: {
+      userId: user._id.toString(),
+      type: "top_up",
+    },
+  });
+
+  return session;
+};
+
 // Webhook handler for Stripe events
 export const handleWebhook = async (req: Request, res: Response) => {
   const sig = req.headers["stripe-signature"] as string;
@@ -192,15 +239,53 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
 const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   const userId = session.metadata?.userId;
+  const type = session.metadata?.type;
+  
   if (!userId) return;
-  console.log("The user is seen successfully", userId);
 
-  // Get the subscription
-  const subscription = await stripe.subscriptions.retrieve(
-    session.subscription as string
-  );
 
-  await handleSubscriptionUpdated(subscription);
+  // Handle top-up payment
+  if (type === "top_up") {
+    await handleTopUpPayment(userId);
+    return;
+  }
+
+  // Handle subscription payment
+  if (session.subscription) {
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription as string
+    );
+    await handleSubscriptionUpdated(subscription);
+  }
+};
+
+const handleTopUpPayment = async (userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    console.error("User not found for top-up payment:", userId);
+    return;
+  }
+
+  // Initialize feature usage if not exists
+  if (!user.featureUsage) {
+    user.featureUsage = {
+      enformionCriminalSearch: 0,
+      enformionNumberSearch: 0,
+      nameLookup: 0,
+      searchOffender: 0,
+      tinEyeImageSearch: 0,
+      lastResetDate: new Date(),
+    };
+  }
+
+  // Add 1 request to each feature
+  user.featureUsage.enformionCriminalSearch += FEATURE_LIMITS.TOP_UP_LIMIT;
+  user.featureUsage.enformionNumberSearch += FEATURE_LIMITS.TOP_UP_LIMIT;
+  user.featureUsage.nameLookup += FEATURE_LIMITS.TOP_UP_LIMIT;
+  user.featureUsage.searchOffender += FEATURE_LIMITS.TOP_UP_LIMIT;
+  user.featureUsage.tinEyeImageSearch += FEATURE_LIMITS.TOP_UP_LIMIT;
+
+  await user.save();
 };
 
 const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
@@ -278,19 +363,31 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
     await subscriptionRecord.save();
   }
 
-  // Update user's subscription info
- const userr = await User.updateOne(
+  // Update user's subscription info and reset feature limits
+  const updateData: any = {
+    "subscription.planId": plan.id,
+    "subscription.status": subscription.status,
+    "subscription.currentPeriodEnd": new Date(
+      data.current_period_end * 1000
+    ),
+    "subscription.cancelAtPeriodEnd": subscription.cancel_at_period_end,
+  };
+
+  // Reset feature limits when subscription is active or renewed
+  if (subscription.status === "active") {
+    updateData["featureUsage"] = {
+      enformionCriminalSearch: FEATURE_LIMITS.SUBSCRIPTION_INITIAL_LIMIT,
+      enformionNumberSearch: FEATURE_LIMITS.SUBSCRIPTION_INITIAL_LIMIT,
+      nameLookup: FEATURE_LIMITS.SUBSCRIPTION_INITIAL_LIMIT,
+      searchOffender: FEATURE_LIMITS.SUBSCRIPTION_INITIAL_LIMIT,
+      tinEyeImageSearch: FEATURE_LIMITS.SUBSCRIPTION_INITIAL_LIMIT,
+      lastResetDate: new Date(),
+    };
+  }
+
+  await User.updateOne(
     { _id: user._id },
-    {
-      $set: {
-        "subscription.planId": plan.id,
-        "subscription.status": subscription.status,
-        "subscription.currentPeriodEnd": new Date(
-          data.current_period_end * 1000
-        ),
-        "subscription.cancelAtPeriodEnd": subscription.cancel_at_period_end,
-      },
-    }
+    { $set: updateData }
   );
 
   return subscriptionRecord;
@@ -367,3 +464,4 @@ export const getUserStripeInvoiceHistory = async (customerId: string) => {
     return [];
   }
 };
+

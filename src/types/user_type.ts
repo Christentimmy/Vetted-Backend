@@ -8,6 +8,15 @@ interface INotificationSettings {
   reactions: boolean;
 }
 
+export interface IFeatureUsage {
+  enformionCriminalSearch: number;
+  enformionNumberSearch: number;
+  nameLookup: number;
+  searchOffender: number;
+  tinEyeImageSearch: number;
+  lastResetDate: Date;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   displayName: string;
@@ -48,6 +57,7 @@ export interface IUser extends Document {
   premiumCredits: number,
   premiumExpiresAt: Date,
   totalInvites: number,
+  featureUsage?: IFeatureUsage,
 
   isDeleted: boolean;
   createdAt: Date;

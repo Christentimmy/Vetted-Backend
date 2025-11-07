@@ -26,6 +26,8 @@ import { handleWebhook } from "./services/stripe_service";
 const app: Express = express();
 const port = config.port;
 
+app.set("trust proxy", 1);
+
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://vetted-admin-b34e.onrender.com"],

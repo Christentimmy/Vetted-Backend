@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 import { FEATURE_LIMITS } from "../config/feature_limits";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
+  apiVersion: "2025-10-29.clover",
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -195,6 +195,11 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
   try {
     switch (event.type) {
+      case "checkout.session.expired":
+        await handleCheckoutExpired(
+          event.data.object as Stripe.Checkout.Session
+        );
+        break;
       case "checkout.session.completed":
         await handleCheckoutCompleted(
           event.data.object as Stripe.Checkout.Session
@@ -237,12 +242,32 @@ export const handleWebhook = async (req: Request, res: Response) => {
   }
 };
 
+const handleCheckoutExpired = async (session: Stripe.Checkout.Session) => {
+  const userId = session.metadata?.userId;
+  const type = session.metadata?.type;
+
+  if (!userId) return;
+
+  // Handle top-up payment
+  if (type === "top_up") {
+    await handleTopUpPayment(userId);
+    return;
+  }
+
+  // Handle subscription payment
+  if (session.subscription) {
+    const subscription = await stripe.subscriptions.retrieve(
+      session.subscription as string
+    );
+    await handleSubscriptionUpdated(subscription);
+  }
+};
+
 const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   const userId = session.metadata?.userId;
   const type = session.metadata?.type;
-  
-  if (!userId) return;
 
+  if (!userId) return;
 
   // Handle top-up payment
   if (type === "top_up") {
@@ -295,7 +320,6 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   const user = await User.findOne({ stripeCustomerId: customerId });
   if (!user) return;
 
-
   const plan = Object.values(PLANS).find(
     (p) => p.stripePriceId === data.price.id
   );
@@ -311,8 +335,6 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
       },
     ],
   });
-
-
 
   // Prepare subscription data
   const subscriptionData = {
@@ -351,9 +373,8 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
       );
     }
 
-
     // Update the existing subscription
-   await Subscription.updateOne(
+    await Subscription.updateOne(
       { _id: subscriptionRecord._id },
       { $set: subscriptionData }
     );
@@ -367,9 +388,7 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
   const updateData: any = {
     "subscription.planId": plan.id,
     "subscription.status": subscription.status,
-    "subscription.currentPeriodEnd": new Date(
-      data.current_period_end * 1000
-    ),
+    "subscription.currentPeriodEnd": new Date(data.current_period_end * 1000),
     "subscription.cancelAtPeriodEnd": subscription.cancel_at_period_end,
   };
 
@@ -385,10 +404,7 @@ const handleSubscriptionUpdated = async (subscription: Stripe.Subscription) => {
     };
   }
 
-  await User.updateOne(
-    { _id: user._id },
-    { $set: updateData }
-  );
+  await User.updateOne({ _id: user._id }, { $set: updateData });
 
   return subscriptionRecord;
 };
@@ -464,4 +480,3 @@ export const getUserStripeInvoiceHistory = async (customerId: string) => {
     return [];
   }
 };
-

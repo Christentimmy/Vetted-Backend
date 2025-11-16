@@ -11,7 +11,7 @@ export const PLANS = {
     id: "pro",
     name: "Pro",
     price: 9.99,
-    stripePriceId: "price_1SMt8hCEHhMF7pKAR9jqPgH4",
+    stripePriceId: "price_1SSjjiRpvja255lNSoM2d7Wk",
   }
 };
 

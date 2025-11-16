@@ -45,7 +45,7 @@ export const createCheckoutSession = async (userId: string) => {
     payment_method_types: ["card"],
     line_items: [
       {
-        price: "price_1SMt8hCEHhMF7pKAR9jqPgH4",
+        price: "price_1SSjjiRpvja255lNSoM2d7Wk",
         quantity: 1,
       },
     ],

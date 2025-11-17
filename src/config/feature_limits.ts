@@ -14,7 +14,7 @@ export const FEATURE_LIMITS = {
   SUBSCRIPTION_INITIAL_LIMIT: 5, // 5 requests per feature when subscribed
   TOP_UP_LIMIT: 1, // 1 request per feature when topped up
   TOP_UP_PRICE: 2.99, // Price in dollars for top-up
-  TOP_UP_PRICE_ID: 'price_1SMq9cCEHhMF7pKAbE34MtbW', // Replace with actual Stripe price ID
+  TOP_UP_PRICE_ID: 'price_1SSjkbRpvja255lNLJgt9mD9', // Replace with actual Stripe price ID
 };
 
 // Mapping of route endpoints to feature names

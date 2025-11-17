@@ -22,9 +22,6 @@ export const proChecker = async (
       });
     }
 
-    // Check if user has active subscription
-    const hasActiveSubscription = user.subscription?.status === "active";
-
     // Check if user has premium credits
     if (user.premiumCredits) {
       if (user.premiumCredits > 0) {
@@ -56,10 +53,8 @@ export const proChecker = async (
       }
     }
 
-    // If has active subscription, check feature usage
-    if (hasActiveSubscription) {
-
-      // Check if user has remaining requests for this feature
+    // Check feature usage based on remaining requests only
+    if (user.featureUsage) {
       const remainingRequests =
         user.featureUsage[featureName as keyof typeof user.featureUsage];
 

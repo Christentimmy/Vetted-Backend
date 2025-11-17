@@ -137,9 +137,9 @@ export const createTopUpCheckoutSession = async (userId: string) => {
   if (!user) throw new Error("User not found");
 
   // Check if user has active subscription
-  if (user.subscription?.status !== "active") {
-    throw new Error("Active subscription required to purchase top-ups");
-  }
+  // if (user.subscription?.status !== "active") {
+  //   throw new Error("Active subscription required to purchase top-ups");
+  // }
 
   let customerId = user.stripeCustomerId;
   if (!customerId) {

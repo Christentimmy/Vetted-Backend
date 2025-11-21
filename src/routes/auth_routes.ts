@@ -11,6 +11,11 @@ router.post("/google-sign-up", authController.googleAuthSignUp);
 router.post("/google-login", authController.googleAuthSignIn);
 router.post("/logout", authController.logoutUser);
 
+router.post("/send-otp", authController.sendOtp);
+router.post("/verify-otp", authController.verifyOtp);
+router.post("/login", authController.login);
+router.post("/register", authController.register);
+
 router.post("/send-number-otp", authController.sendNumberOtp);
 router.post("/verify-number-otp", authController.verifyNumberOtp);
 router.post("/validate-token", authController.validateToken);

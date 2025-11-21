@@ -4,7 +4,7 @@ import SearchLog from "../models/search_model";
 import { Post } from "../models/post_model";
 import bcryptjs from "bcryptjs";
 import generateToken from "../utils/token_generator";
-import { sendEmail } from "../services/email_service";
+import { sendMessageEmail } from "../services/email_service";
 import {
   getSubscription,
   cancelSubscription,
@@ -288,7 +288,7 @@ export const adminController = {
         res.json({ message: "Email, recipient name and message are required" });
         return;
       }
-      const responce = await sendEmail(email, recipientName, message);
+      const responce = await sendMessageEmail(email, recipientName, message);
       if (!responce.success) {
         res.json({ message: responce.message });
         return;

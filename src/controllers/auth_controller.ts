@@ -12,7 +12,7 @@ import mongoose from "mongoose";
 import config from "../config/config";
 import tokenBlacklistSchema from "../models/token_blacklist_model";
 import bcryptjs from "bcryptjs";
-import { sendEmail } from "../services/email_service";
+import { sendEmailOtp } from "../services/email_service";
 
 const token_secret = config.jwt.secret;
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
@@ -153,6 +153,7 @@ export const authController = {
         email: googleUser.email,
         displayName: googleUser.name,
         avatarUrl: googleUser.picture,
+        isEmailVerified: true,
         role: "user",
       });
       await user.save();
@@ -236,7 +237,7 @@ export const authController = {
         res.status(404).json({ message: "Invalid Credentials" });
         return;
       }
-      const isPasswordValid = user.password === password;
+      const isPasswordValid = await bcryptjs.compare(password, user.password);
       if (!isPasswordValid) {
         res.status(401).json({ message: "Invalid Credentials" });
         return;
@@ -285,11 +286,9 @@ export const authController = {
       });
       await user.save();
 
-      const min = 10000;
-      const max = 99999;
-      const otp = Math.floor(Math.random() * (max - min + 1)) + min;
+      const otp = Math.floor(100000 + Math.random() * 900000);
 
-      await sendEmail(email, otp.toString());
+      await sendEmailOtp(email, otp.toString());
       await redisController.saveOtpToStore(email, otp.toString());
 
       const jwtToken = generateToken(user);
@@ -360,7 +359,7 @@ export const authController = {
       const otp = Math.floor(100000 + Math.random() * 900000);
 
       await redisController.saveOtpToStore(user.email, otp.toString());
-      await sendEmail(user.email, otp.toString());
+      await sendEmailOtp(user.email, otp.toString());
 
       res.status(200).json({ message: "OTP sent successfully" });
     } catch (error) {

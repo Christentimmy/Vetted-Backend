@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { SupportTicket } from "../models/support_ticket_model";
 import UserSchema from "../models/user_model";
-import { sendEmail, sendBulkEmail } from "../services/email_service";
+import { sendMessageEmail, sendBulkEmail } from "../services/email_service";
 import { uploadToCloudinary } from "../middlewares/upload";
 
 export const supportTicketController = {
@@ -17,10 +17,8 @@ export const supportTicketController = {
         return;
       }
 
-      if (!subject || !description ) {
-        res
-          .status(400)
-          .json({ message: "Subject, description, required" });
+      if (!subject || !description) {
+        res.status(400).json({ message: "Subject, description, required" });
         return;
       }
 
@@ -185,7 +183,7 @@ export const supportTicketController = {
                     ${admin ? `Assigned To: ${admin.displayName}` : ""}
                 `;
 
-        await sendEmail(user.email, user.displayName, message);
+        await sendMessageEmail(user.email, user.displayName, message);
       }
 
       res.status(200).json({ message: "Ticket status updated successfully" });
@@ -234,7 +232,9 @@ export const supportTicketController = {
       }
       ticket.status = "resolved";
       await ticket.save();
-      res.status(200).json({ message: "Ticket marked as resolved successfully" });
+      res
+        .status(200)
+        .json({ message: "Ticket marked as resolved successfully" });
     } catch (error) {
       console.error("markAsResolved error:", error);
       res.status(500).json({ message: "Internal server error" });

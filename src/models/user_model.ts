@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     isProfileCompleted: {
       type: Boolean,
       default: false,

@@ -12,6 +12,7 @@ import mongoose from "mongoose";
 import config from "../config/config";
 import tokenBlacklistSchema from "../models/token_blacklist_model";
 import bcryptjs from "bcryptjs";
+import { sendEmail } from "../services/email_service";
 
 const token_secret = config.jwt.secret;
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
@@ -240,7 +241,12 @@ export const authController = {
         res.status(401).json({ message: "Invalid Credentials" });
         return;
       }
-      
+
+      if (user.accountStatus !== "active") {
+        res.status(403).json({ message: "Account banned" });
+        return;
+      }
+
       const jwtToken = generateToken(user);
       res.status(200).json({
         message: "Login Successful",
@@ -279,8 +285,12 @@ export const authController = {
       });
       await user.save();
 
+      const min = 10000;
+      const max = 99999;
+      const otp = Math.floor(Math.random() * (max - min + 1)) + min;
 
-
+      await sendEmail(email, otp.toString());
+      await redisController.saveOtpToStore(email, otp.toString());
 
       const jwtToken = generateToken(user);
       res.status(201).json({
@@ -290,6 +300,72 @@ export const authController = {
     } catch (error) {
       console.log(error);
       return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  verifyOtp: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "No data provided" });
+        return;
+      }
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        res.status(400).json({ message: "Email and OTP are required" });
+        return;
+      }
+      const storedOtp = await redisController.getOtpFromStore(email);
+      if (!storedOtp) {
+        res.status(400).json({ message: "Invalid OTP" });
+        return;
+      }
+      if (storedOtp !== otp) {
+        res.status(400).json({ message: "Invalid OTP" });
+        return;
+      }
+      await redisController.removeOtp(email);
+      const user = await UserModel.findOne({ email });
+      if (!user) {
+        res.status(400).json({ message: "User not found" });
+        return;
+      }
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+        await user.save();
+      }
+
+      res.status(200).json({ message: "OTP verified successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  sendOtp: async (req: Request, res: Response) => {
+    try {
+      if (!req.body) {
+        res.status(400).json({ message: "No data provided" });
+        return;
+      }
+      const { email } = req.body;
+      if (!email) {
+        res.status(400).json({ message: "Email is required" });
+        return;
+      }
+      const user = await UserModel.findOne({ email });
+      if (!user) {
+        res.status(400).json({ message: "User not found" });
+        return;
+      }
+      const otp = Math.floor(100000 + Math.random() * 900000);
+
+      await redisController.saveOtpToStore(user.email, otp.toString());
+      await sendEmail(user.email, otp.toString());
+
+      res.status(200).json({ message: "OTP sent successfully" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
     }
   },
 

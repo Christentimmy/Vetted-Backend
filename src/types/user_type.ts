@@ -28,6 +28,7 @@ export interface IUser extends Document {
   dateOfBirth: Date;
   accountStatus: "active" | "inactive" | "banned" | "suspended";
   isProfileCompleted: boolean;
+  isEmailVerified: boolean;
   isPhoneVerified: boolean;
   relationshipStatus:
     | "single"

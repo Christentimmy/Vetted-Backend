@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema<IUser>(
         partialFilterExpression: { phone: { $type: "string" } },
       },
     },
-    password: { type: String },
+    password: { type: String, select: false },
     role: {
       type: String,
       enum: ["user", "admin", "super_admin"],
@@ -88,19 +88,19 @@ const userSchema = new mongoose.Schema<IUser>(
       cancelAtPeriodEnd: { type: Boolean, default: false },
     },
 
-    inviteCode: { 
-      type: String, 
-      unique: true, 
+    inviteCode: {
+      type: String,
+      unique: true,
       sparse: true,
-      uppercase: true 
+      uppercase: true,
     },
-    invitedBy: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User" 
+    invitedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
-    premiumCredits: { 
-      type: Number, 
-      default: 0 
+    premiumCredits: {
+      type: Number,
+      default: 0,
     },
     notificationSettings: {
       general: { type: Boolean, default: true },
@@ -109,12 +109,12 @@ const userSchema = new mongoose.Schema<IUser>(
       alertForWomenNames: { type: Boolean, default: true },
       reactions: { type: Boolean, default: true },
     },
-    premiumExpiresAt: { 
-      type: Date 
+    premiumExpiresAt: {
+      type: Date,
     },
-    totalInvites: { 
-      type: Number, 
-      default: 0 
+    totalInvites: {
+      type: Number,
+      default: 0,
     },
     featureUsage: {
       enformionCriminalSearch: { type: Number, default: 0 },

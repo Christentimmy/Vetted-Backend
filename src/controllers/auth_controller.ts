@@ -11,6 +11,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import mongoose from "mongoose";
 import config from "../config/config";
 import tokenBlacklistSchema from "../models/token_blacklist_model";
+import bcryptjs from "bcryptjs";
 
 const token_secret = config.jwt.secret;
 const isValidObjectId = mongoose.Types.ObjectId.isValid;
@@ -215,6 +216,80 @@ export const authController = {
       } else {
         res.status(500).json({ message: "Internal server error" });
       }
+    }
+  },
+
+  login: async (req: Request, res: Response) => {
+    try {
+      if (!req.body || typeof req.body !== "object") {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
+      const { email, password } = req.body;
+      if (!email || !password) {
+        res.status(400).json({ message: "Email and password are required" });
+        return;
+      }
+      const user = await UserModel.findOne({ email }).select("+password");
+      if (!user) {
+        res.status(404).json({ message: "Invalid Credentials" });
+        return;
+      }
+      const isPasswordValid = user.password === password;
+      if (!isPasswordValid) {
+        res.status(401).json({ message: "Invalid Credentials" });
+        return;
+      }
+      
+      const jwtToken = generateToken(user);
+      res.status(200).json({
+        message: "Login Successful",
+        token: jwtToken,
+        email: user.email,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  register: async (req: Request, res: Response) => {
+    try {
+      if (!req.body || typeof req.body !== "object") {
+        res.status(400).json({ message: "Missing request body" });
+        return;
+      }
+      const { email, password } = req.body;
+      if (!email || !password) {
+        res.status(400).json({ message: "Email and password are required" });
+        return;
+      }
+      const existingUser = await UserModel.findOne({ email });
+      if (existingUser) {
+        res.status(400).json({ message: "User already exists" });
+        return;
+      }
+
+      const salt = await bcryptjs.genSalt(10);
+      const hashedPassword = await bcryptjs.hash(password, salt);
+
+      const user = new UserModel({
+        email,
+        password: hashedPassword,
+      });
+      await user.save();
+
+
+
+
+      const jwtToken = generateToken(user);
+      res.status(201).json({
+        message: "User registered successfully",
+        token: jwtToken,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 

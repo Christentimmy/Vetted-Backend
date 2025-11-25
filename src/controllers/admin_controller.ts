@@ -68,7 +68,7 @@ export const adminController = {
       const user = await UserModel.findOne({
         email,
         role: { $in: ["admin", "super_admin"] },
-      });
+      }).select("+password");
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
